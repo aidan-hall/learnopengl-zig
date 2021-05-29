@@ -11,7 +11,17 @@ pub fn build(b: *Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
+    // Source
     const exe = b.addExecutable("getting-started-hybrid", "src/main.zig");
+
+    exe.addIncludeDir("include");
+    exe.addCSourceFile("src/glad.c", &[_][]const u8{});
+    exe.addCSourceFile("src/sigl.c", &[_][]const u8{});
+
+    // Libs
+    exe.linkLibC();
+    exe.linkSystemLibrary("glfw");
+
     exe.setTarget(target);
     exe.setBuildMode(mode);
     exe.install();
