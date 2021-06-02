@@ -10,8 +10,8 @@ GLFWwindow* setup(
 		return NULL;
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Window
@@ -43,20 +43,6 @@ void cleanup(GLFWwindow* win) {
 
 void framebufferSizeCallback(GLFWwindow* win, int width, int height) {
 	glViewport(0, 0, width, height);
-}
-
-void processInput(GLFWwindow* window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		int polyMode;
-		glGetIntegerv(GL_POLYGON_MODE, &polyMode);
-		if (polyMode == GL_LINE)
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		else
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {

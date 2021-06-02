@@ -21,10 +21,10 @@ pub fn main() anyerror!void {
 
     // zig fmt: off
     var vertices = [_]f32{
-        0.5, 0.5, 0.0, // top right
-        0.5, -0.5, 0.0, // bottom right
-        -0.5, -0.5, 0.0, // bottom left
-        -0.5, 0.5, 0.0, // top left
+        1.0, 1.0, 0.0, // top right
+        1.0, -0.8, 0.0, // bottom right
+        -1.0, -0.8, 0.0, // bottom left
+        -1.0, 1.0, 0.0, // top left
         0.0, -1.0, 0.0, // bottom middle
     };
     var indices = [_]u32{
@@ -91,8 +91,12 @@ pub fn main() anyerror!void {
 
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
-        // std.time.sleep(std.time.ns_per_s / 60);
-        // Input
+        var time = @floatCast(f32, c.glfwGetTime());
+        // var green = (std.math.sin(time) / 2.0) + 0.5;
+        // var ourColourLoc = c.glGetUniformLocation(shaderProgram, "ourColour");
+        var timeLoc = c.glGetUniformLocation(shaderProgram, "glfwTime");
+        c.glUniform1f(timeLoc, time);
+        // c.glUniform4f(ourColourLoc, 0.0, green, 0.0, 1.0);
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);
@@ -182,7 +186,7 @@ inline fn glBool(cond: bool) c.GLchar {
         return c.GL_FALSE;
 }
 
-fn glTypeID(comptime attrib: type) !c.GLenum {
+fn glTypeID(comptime attrib: type) !comptime c.GLenum {
     return switch (attrib) {
         i8 => c.GL_BYTE,
         u8 => c.GL_UNSIGNED_BYTE,
