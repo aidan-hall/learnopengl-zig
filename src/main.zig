@@ -21,14 +21,14 @@ pub fn main() anyerror!void {
 
     // zig fmt: off
     var vertices = [_]f32{
-        // first triangle
         0.5, 0.5, 0.0, // top right
-        0.5, -0.5, 0.0, // bottom right
-        -0.5, 0.5, 0.0, // top left
-        // second triangle
         0.5, -0.5, 0.0, // bottom right
         -0.5, -0.5, 0.0, // bottom left
         -0.5, 0.5, 0.0, // top left
+    };
+    var indices = [_]u32{
+        0, 1, 3, // first triangle
+        1, 2, 3, // second triangle
     };
     // zig fmt: on
 
@@ -58,11 +58,18 @@ pub fn main() anyerror!void {
     c.glGenVertexArrays(1, &vao);
     c.glGenBuffers(1, &vao);
     c.glBindVertexArray(vao);
+
     // vertex buffer object
     var vbo: c.GLuint = undefined;
     c.glGenBuffers(1, &vbo);
     c.glBindBuffer(c.GL_ARRAY_BUFFER, vbo);
     c.glBufferData(c.GL_ARRAY_BUFFER, @sizeOf(@TypeOf(vertices)), &vertices, c.GL_STATIC_DRAW);
+
+    // element buffer object: which vertices to use for each triangle
+    var ebo: c.GLuint = undefined;
+    c.glGenBuffers(1, &ebo);
+    c.glBindBuffer(c.GL_ELEMENT_ARRAY_BUFFER, ebo);
+    c.glBufferData(c.GL_ELEMENT_ARRAY_BUFFER, @sizeOf(@TypeOf(indices)), &indices, c.GL_STATIC_DRAW);
 
     // vertex attributes
     c.glVertexAttribPointer(0, 3, try glTypeID(f32), glBool(false), 0, null);
@@ -82,7 +89,9 @@ pub fn main() anyerror!void {
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);
-        c.glDrawArrays(c.GL_TRIANGLES, 0, 6);
+        c.glBindBuffer(c.GL_ELEMENT_ARRAY_BUFFER, ebo);
+        c.glDrawElements(c.GL_TRIANGLES, 6, try glTypeID(@TypeOf(indices[0])), null);
+        // c.glDrawArrays(c.GL_TRIANGLES, 0, 6);
 
         // Events and Buffers
         c.glfwSwapBuffers(win);
@@ -93,6 +102,12 @@ pub fn main() anyerror!void {
 fn processInput(window: *c.GLFWwindow) void {
     if (c.glfwGetKey(window, c.GLFW_KEY_ESCAPE) == c.GLFW_PRESS) {
         c.glfwSetWindowShouldClose(window, c.GLFW_TRUE);
+    }
+    if (c.glfwGetKey(window, c.GLFW_KEY_W) == c.GLFW_PRESS) {
+        c.glPolygonMode(c.GL_FRONT_AND_BACK, c.GL_LINE);
+    }
+    if (c.glfwGetKey(window, c.GLFW_KEY_F) == c.GLFW_PRESS) {
+        c.glPolygonMode(c.GL_FRONT_AND_BACK, c.GL_FILL);
     }
 }
 
