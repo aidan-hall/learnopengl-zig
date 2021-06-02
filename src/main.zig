@@ -25,10 +25,12 @@ pub fn main() anyerror!void {
         0.5, -0.5, 0.0, // bottom right
         -0.5, -0.5, 0.0, // bottom left
         -0.5, 0.5, 0.0, // top left
+        0.0, -1.0, 0.0, // bottom middle
     };
     var indices = [_]u32{
         0, 1, 3, // first triangle
         1, 2, 3, // second triangle
+        1, 2, 4, // third triangle
     };
     // zig fmt: on
 
@@ -90,7 +92,7 @@ pub fn main() anyerror!void {
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);
         c.glBindBuffer(c.GL_ELEMENT_ARRAY_BUFFER, ebo);
-        c.glDrawElements(c.GL_TRIANGLES, 6, try glTypeID(@TypeOf(indices[0])), null);
+        c.glDrawElements(c.GL_TRIANGLES, 9, try glTypeID(@TypeOf(indices[0])), null);
         // c.glDrawArrays(c.GL_TRIANGLES, 0, 6);
 
         // Events and Buffers
