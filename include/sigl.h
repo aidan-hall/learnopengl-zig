@@ -10,3 +10,4 @@ GLFWwindow* setup(
 void cleanup(GLFWwindow* win);
 
 void framebufferSizeCallback(GLFWwindow* win, int width, int height);
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);

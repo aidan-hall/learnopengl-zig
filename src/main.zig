@@ -38,6 +38,12 @@ pub fn main() anyerror!void {
     var win = c.setup(200, 200, "Nice GLFW", null, null) orelse return error.SiglInit;
     defer c.cleanup(win);
 
+    {
+        var nAttrs: c_int = undefined;
+        c.glGetIntegerv(c.GL_MAX_VERTEX_ATTRIBS, &nAttrs);
+        std.log.info("Max attrs: {}", .{nAttrs});
+    }
+
     var shaderProgram = shadProcBlk: {
         var shaderSources = [_]ShaderSource{
             ShaderSource{
@@ -87,7 +93,6 @@ pub fn main() anyerror!void {
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         // std.time.sleep(std.time.ns_per_s / 60);
         // Input
-        processInput(win);
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);
@@ -98,18 +103,6 @@ pub fn main() anyerror!void {
         // Events and Buffers
         c.glfwSwapBuffers(win);
         c.glfwPollEvents();
-    }
-}
-
-fn processInput(window: *c.GLFWwindow) void {
-    if (c.glfwGetKey(window, c.GLFW_KEY_ESCAPE) == c.GLFW_PRESS) {
-        c.glfwSetWindowShouldClose(window, c.GLFW_TRUE);
-    }
-    if (c.glfwGetKey(window, c.GLFW_KEY_W) == c.GLFW_PRESS) {
-        c.glPolygonMode(c.GL_FRONT_AND_BACK, c.GL_LINE);
-    }
-    if (c.glfwGetKey(window, c.GLFW_KEY_F) == c.GLFW_PRESS) {
-        c.glPolygonMode(c.GL_FRONT_AND_BACK, c.GL_FILL);
     }
 }
 
