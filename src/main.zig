@@ -21,11 +21,11 @@ pub fn main() anyerror!void {
 
     // zig fmt: off
     var vertices = [_]f32{
-        1.0, 1.0, 0.0, // top right
-        1.0, -0.8, 0.0, // bottom right
-        -1.0, -0.8, 0.0, // bottom left
-        -1.0, 1.0, 0.0, // top left
-        0.0, -1.0, 0.0, // bottom middle
+        1.0, 1.0, 0.0, 0.9, 0.0, 0.0, // top right
+        1.0, -0.8, 0.0, 0.0, 0.9, 0.0, // bottom right
+        -1.0, -0.8, 0.0, 0.0, 0.0, 0.9, // bottom left
+        -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, // top left
+        0.0, -1.0, 0.0, 0.0, 0.9, 0.9, // bottom middle
     };
     var indices = [_]u32{
         0, 1, 3, // first triangle
@@ -80,8 +80,12 @@ pub fn main() anyerror!void {
     c.glBufferData(c.GL_ELEMENT_ARRAY_BUFFER, @sizeOf(@TypeOf(indices)), &indices, c.GL_STATIC_DRAW);
 
     // vertex attributes
-    c.glVertexAttribPointer(0, 3, try glTypeID(f32), glBool(false), 0, null);
+    // position
+    c.glVertexAttribPointer(0, 3, try glTypeID(f32), glBool(false), 6 * @sizeOf(f32), null);
     c.glEnableVertexAttribArray(0);
+    // colour
+    c.glVertexAttribPointer(1, 3, try glTypeID(f32), glBool(false), 6 * @sizeOf(f32), @intToPtr(*const c_void, 3 * @sizeOf(f32)));
+    c.glEnableVertexAttribArray(1);
 
     //...
 
