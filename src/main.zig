@@ -4,16 +4,103 @@ const c = @cImport({
 
 const std = @import("std");
 
-const ShaderSource = struct {
-    code: []const u8,
-    shaderType: c.GLenum,
-};
+// An OpenGL 'Shader Program'.
+const Shader = struct {
+    id: c.GLuint,
 
-const ShaderError = error{
-    CreateShader,
-    Compile,
-    CreateProgram,
-    Link,
+    const Source = struct {
+        code: []const u8,
+        shaderType: c.GLenum,
+    };
+
+    const Error = error{
+        CreateShader,
+        Compile,
+        CreateProgram,
+        Link,
+    };
+
+    inline fn initString(source: Source) Error!c.GLuint {
+        var shader = try createShaderObject(source.shaderType);
+
+        c.glShaderSource(shader, 1, @ptrCast([*c]const [*c]const u8, &source.code), null);
+
+        try compile(shader);
+
+        return shader;
+    }
+
+    fn initStrings(sources: []const Source, outShaders: []c.GLuint) Error!void {
+        std.debug.assert(sources.len == outShaders.len);
+        for (sources) |source, idx| {
+            outShaders[idx] = try initString(source);
+        }
+    }
+
+    inline fn createShaderObject(shaderType: c.GLenum) Error!c.GLuint {
+        // init
+        var id: c.GLuint = c.glCreateShader(shaderType);
+
+        if (id == 0) {
+            return Error.CreateShader;
+        }
+        return id;
+    }
+
+    fn compile(self: c.GLuint) Error!void {
+        c.glCompileShader(self);
+
+        var success: c.GLuint = undefined;
+        c.glGetShaderiv(self, c.GL_COMPILE_STATUS, @ptrCast([*c]c.GLint, &success));
+
+        // log failure
+        if (success != c.GL_TRUE) {
+            var infoLog: [512]u8 = undefined;
+            c.glGetShaderInfoLog(self, infoLog.len, null, @ptrCast([*c]u8, &infoLog));
+            std.log.err("Shader compilation failed: {}", .{infoLog});
+            return Error.Compile;
+        }
+    }
+
+    fn makeProgramStrings(sources: []Source, al: *std.mem.Allocator) !Shader {
+        var shaders = try al.alloc(c.GLuint, sources.len);
+        defer al.free(shaders);
+        try initStrings(sources, shaders);
+        return try makeProgram(shaders);
+    }
+
+    fn makeProgram(shaders: []c.GLuint) Error!Shader {
+        // shaders
+        var id: c.GLuint = c.glCreateProgram();
+        if (id == 0) {
+            return Error.CreateProgram;
+        }
+
+        for (shaders) |shader| {
+            c.glAttachShader(id, shader);
+            c.glDeleteShader(shader);
+        }
+
+        c.glLinkProgram(id);
+
+        // check for errors
+        var success: c.GLint = undefined;
+        c.glGetProgramiv(id, c.GL_LINK_STATUS, @ptrCast([*c]c.GLint, &success));
+        if (success != c.GL_TRUE) {
+            var infoLog: [512]u8 = undefined;
+            c.glGetProgramInfoLog(id, infoLog.len, null, @ptrCast([*c]u8, &infoLog));
+            std.log.err("Shader program linking failed: {}", .{infoLog});
+            return Error.Link;
+        }
+        return Shader{ .id = id };
+    }
+    inline fn use(self: Shader) void {
+        c.glUseProgram(self.id);
+    }
+    inline fn getUniform(self: Shader, name: [*c]const u8) c.GLint {
+        return c.glGetUniformLocation(self.id, name);
+    }
+    fn setUniform(self: Shader, name: []u8, value: anytype) void {}
 };
 
 pub fn main() anyerror!void {
@@ -45,21 +132,20 @@ pub fn main() anyerror!void {
     }
 
     var shaderProgram = shadProcBlk: {
-        var shaderSources = [_]ShaderSource{
-            ShaderSource{
+        var shaderSources = [_]Shader.Source{
+            Shader.Source{
                 .shaderType = c.GL_VERTEX_SHADER,
                 .code = @embedFile("vertex.glsl"),
             },
-            ShaderSource{
+            Shader.Source{
                 .shaderType = c.GL_FRAGMENT_SHADER,
                 .code = @embedFile("fragment.glsl"),
             },
         };
-        var shaders: [shaderSources.len]c.GLuint = undefined;
-        try initShaderStrings(&shaderSources, &shaders);
-        break :shadProcBlk try makeShaderProgram(&shaders);
+        var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+        break :shadProcBlk try Shader.makeProgramStrings(&shaderSources, &gpa.allocator);
     };
-    c.glUseProgram(shaderProgram);
+    shaderProgram.use();
 
     // vertex array object: Stores attributes for a vbo.
     var vao: c.GLuint = undefined;
@@ -98,7 +184,7 @@ pub fn main() anyerror!void {
         var time = @floatCast(f32, c.glfwGetTime());
         // var green = (std.math.sin(time) / 2.0) + 0.5;
         // var ourColourLoc = c.glGetUniformLocation(shaderProgram, "ourColour");
-        var timeLoc = c.glGetUniformLocation(shaderProgram, "glfwTime");
+        var timeLoc = shaderProgram.getUniform("glfwTime");
         c.glUniform1f(timeLoc, time);
         // c.glUniform4f(ourColourLoc, 0.0, green, 0.0, 1.0);
 
@@ -112,75 +198,6 @@ pub fn main() anyerror!void {
         c.glfwSwapBuffers(win);
         c.glfwPollEvents();
     }
-}
-
-inline fn initShaderString(source: ShaderSource) ShaderError!c.GLuint {
-    var shader = try createShader(source.shaderType);
-
-    c.glShaderSource(shader, 1, @ptrCast([*c]const [*c]const u8, &source.code), null);
-
-    try compileShader(shader);
-
-    return shader;
-}
-
-fn initShaderStrings(sources: []const ShaderSource, outShaders: []c.GLuint) ShaderError!void {
-    std.debug.assert(sources.len == outShaders.len);
-    for (sources) |source, idx| {
-        outShaders[idx] = try initShaderString(source);
-    }
-}
-
-inline fn createShader(shaderType: c.GLenum) ShaderError!c.GLuint {
-    // init
-    var shader: c.GLuint = c.glCreateShader(shaderType);
-
-    if (shader == 0) {
-        return ShaderError.CreateShader;
-    }
-    return shader;
-}
-
-fn compileShader(shader: c.GLuint) ShaderError!void {
-    c.glCompileShader(shader);
-
-    var success: c.GLuint = undefined;
-    c.glGetShaderiv(shader, c.GL_COMPILE_STATUS, @ptrCast([*c]c.GLint, &success));
-
-    // log failure
-    if (success != c.GL_TRUE) {
-        var infoLog: [512]u8 = undefined;
-        c.glGetShaderInfoLog(shader, infoLog.len, null, @ptrCast([*c]u8, &infoLog));
-        std.log.err("Shader compilation failed: {}", .{infoLog});
-        return ShaderError.Compile;
-    }
-}
-
-fn makeShaderProgram(shaders: []c.GLuint) ShaderError!c.GLuint {
-    // shaders
-    var shaderProgram: c.GLuint = c.glCreateProgram();
-    if (shaderProgram == 0) {
-        return ShaderError.CreateProgram;
-    }
-
-    for (shaders) |shader| {
-        c.glAttachShader(shaderProgram, shader);
-        c.glDeleteShader(shader);
-    }
-
-    c.glLinkProgram(shaderProgram);
-
-    // check for errors
-    var success: c.GLint = undefined;
-    c.glGetProgramiv(shaderProgram, c.GL_LINK_STATUS, @ptrCast([*c]c.GLint, &success));
-    if (success != c.GL_TRUE) {
-        var infoLog: [512]u8 = undefined;
-        c.glGetProgramInfoLog(shaderProgram, infoLog.len, null, @ptrCast([*c]u8, &infoLog));
-        std.log.err("Shader program linking failed: {}", .{infoLog});
-        return ShaderError.Link;
-    }
-
-    return shaderProgram;
 }
 
 inline fn glBool(cond: bool) c.GLchar {
