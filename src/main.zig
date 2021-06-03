@@ -20,7 +20,7 @@ const Shader = struct {
         Link,
     };
 
-    inline fn initString(source: Source) Error!c.GLuint {
+    inline fn initString(source: Source) !c.GLuint {
         var shader = try createShaderObject(source.shaderType);
 
         c.glShaderSource(shader, 1, @ptrCast([*c]const [*c]const u8, &source.code), null);
@@ -30,14 +30,14 @@ const Shader = struct {
         return shader;
     }
 
-    fn initStrings(sources: []const Source, outShaders: []c.GLuint) Error!void {
+    fn initStrings(sources: []const Source, outShaders: []c.GLuint) !void {
         std.debug.assert(sources.len == outShaders.len);
         for (sources) |source, idx| {
             outShaders[idx] = try initString(source);
         }
     }
 
-    inline fn createShaderObject(shaderType: c.GLenum) Error!c.GLuint {
+    inline fn createShaderObject(shaderType: c.GLenum) !c.GLuint {
         // init
         var id: c.GLuint = c.glCreateShader(shaderType);
 
@@ -47,7 +47,7 @@ const Shader = struct {
         return id;
     }
 
-    fn compile(self: c.GLuint) Error!void {
+    fn compile(self: c.GLuint) !void {
         c.glCompileShader(self);
 
         var success: c.GLuint = undefined;
@@ -69,7 +69,7 @@ const Shader = struct {
         return try makeProgram(shaders);
     }
 
-    fn makeProgram(shaders: []c.GLuint) Error!Shader {
+    fn makeProgram(shaders: []c.GLuint) !Shader {
         // shaders
         var id: c.GLuint = c.glCreateProgram();
         if (id == 0) {
@@ -103,7 +103,7 @@ const Shader = struct {
     fn setUniform(self: Shader, name: []u8, value: anytype) void {}
 };
 
-pub fn main() anyerror!void {
+pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
 
     // zig fmt: off
