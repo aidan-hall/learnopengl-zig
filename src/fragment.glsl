@@ -4,6 +4,7 @@ out vec4 FragColor;
 in vec3 vertexColour;
 
 uniform float glfwTime;
+uniform vec3 ourColour;
 
 void main()
 {

@@ -3,105 +3,8 @@ const c = @cImport({
 });
 
 const std = @import("std");
-
-// An OpenGL 'Shader Program'.
-const Shader = struct {
-    id: c.GLuint,
-
-    const Source = struct {
-        code: []const u8,
-        shaderType: c.GLenum,
-    };
-
-    const Error = error{
-        CreateShader,
-        Compile,
-        CreateProgram,
-        Link,
-    };
-
-    inline fn initString(source: Source) !c.GLuint {
-        var shader = try createShaderObject(source.shaderType);
-
-        c.glShaderSource(shader, 1, @ptrCast([*c]const [*c]const u8, &source.code), null);
-
-        try compile(shader);
-
-        return shader;
-    }
-
-    fn initStrings(sources: []const Source, outShaders: []c.GLuint) !void {
-        std.debug.assert(sources.len == outShaders.len);
-        for (sources) |source, idx| {
-            outShaders[idx] = try initString(source);
-        }
-    }
-
-    inline fn createShaderObject(shaderType: c.GLenum) !c.GLuint {
-        // init
-        var id: c.GLuint = c.glCreateShader(shaderType);
-
-        if (id == 0) {
-            return Error.CreateShader;
-        }
-        return id;
-    }
-
-    fn compile(self: c.GLuint) !void {
-        c.glCompileShader(self);
-
-        var success: c.GLuint = undefined;
-        c.glGetShaderiv(self, c.GL_COMPILE_STATUS, @ptrCast([*c]c.GLint, &success));
-
-        // log failure
-        if (success != c.GL_TRUE) {
-            var infoLog: [512]u8 = undefined;
-            c.glGetShaderInfoLog(self, infoLog.len, null, @ptrCast([*c]u8, &infoLog));
-            std.log.err("Shader compilation failed: {}", .{infoLog});
-            return Error.Compile;
-        }
-    }
-
-    fn makeProgramStrings(sources: []Source, al: *std.mem.Allocator) !Shader {
-        var shaders = try al.alloc(c.GLuint, sources.len);
-        defer al.free(shaders);
-        try initStrings(sources, shaders);
-        return try makeProgram(shaders);
-    }
-
-    fn makeProgram(shaders: []c.GLuint) !Shader {
-        // shaders
-        var id: c.GLuint = c.glCreateProgram();
-        if (id == 0) {
-            return Error.CreateProgram;
-        }
-
-        for (shaders) |shader| {
-            c.glAttachShader(id, shader);
-            c.glDeleteShader(shader);
-        }
-
-        c.glLinkProgram(id);
-
-        // check for errors
-        var success: c.GLint = undefined;
-        c.glGetProgramiv(id, c.GL_LINK_STATUS, @ptrCast([*c]c.GLint, &success));
-        if (success != c.GL_TRUE) {
-            var infoLog: [512]u8 = undefined;
-            c.glGetProgramInfoLog(id, infoLog.len, null, @ptrCast([*c]u8, &infoLog));
-            std.log.err("Shader program linking failed: {}", .{infoLog});
-            return Error.Link;
-        }
-        return Shader{ .id = id };
-    }
-    inline fn use(self: Shader) void {
-        c.glUseProgram(self.id);
-    }
-    inline fn getUniform(self: Shader, name: [*c]const u8) c.GLint {
-        return c.glGetUniformLocation(self.id, name);
-    }
-    fn setUniform(self: Shader, name: []u8, value: anytype) void {}
-};
+usingnamespace @import("utilgl.zig");
+usingnamespace @import("shader.zig");
 
 pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
@@ -183,10 +86,11 @@ pub fn main() !void {
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
         // var green = (std.math.sin(time) / 2.0) + 0.5;
+        // try shaderProgram.setUniform([3]f32, "ourColour", [3]f32{0.0, green, 0.0});
         // var ourColourLoc = c.glGetUniformLocation(shaderProgram, "ourColour");
-        var timeLoc = shaderProgram.getUniform("glfwTime");
-        c.glUniform1f(timeLoc, time);
+        // var timeLoc = try shaderProgram.getUniform("glfwTime");
         // c.glUniform4f(ourColourLoc, 0.0, green, 0.0, 1.0);
+        try shaderProgram.setUniform(f32, "glfwTime", time);
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);
@@ -198,26 +102,4 @@ pub fn main() !void {
         c.glfwSwapBuffers(win);
         c.glfwPollEvents();
     }
-}
-
-inline fn glBool(cond: bool) c.GLchar {
-    if (cond == true)
-        return c.GL_TRUE
-    else
-        return c.GL_FALSE;
-}
-
-fn glTypeID(comptime attrib: type) !comptime c.GLenum {
-    return switch (attrib) {
-        i8 => c.GL_BYTE,
-        u8 => c.GL_UNSIGNED_BYTE,
-        i16 => c.GL_SHORT,
-        u16 => c.GL_UNSIGNED_SHORT,
-        i32 => c.GL_INT,
-        u32 => c.GL_UNSIGNED_INT,
-        f32 => c.GL_FLOAT,
-        f64 => c.GL_DOUBLE,
-        bool => c.GL_BOOL,
-        else => error.NoKnownGLType,
-    };
 }

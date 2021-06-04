@@ -1,10 +1,10 @@
 #include "sigl.h"
 
 GLFWwindow* setup(
-		int winWidth, int winHeight,
-		const char* title,
-		GLFWmonitor* monitor, GLFWwindow* share
-		) {
+int winWidth, int winHeight,
+const char* title,
+GLFWmonitor* monitor, GLFWwindow* share
+) {
 	// GLFW
 	if (glfwInit() == GLFW_FALSE) {
 		return NULL;
@@ -48,20 +48,22 @@ void framebufferSizeCallback(GLFWwindow* win, int width, int height) {
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_RELEASE) {
 		switch (key) {
-			case GLFW_KEY_ESCAPE:
-				glfwSetWindowShouldClose(window, GLFW_TRUE);
-				break;
-			case GLFW_KEY_W: {
-					int polyMode;
-					glGetIntegerv(GL_POLYGON_MODE, &polyMode);
-					if (polyMode == GL_LINE)
-						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-					else
-						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GLFW_TRUE);
+			break;
+		case GLFW_KEY_W:
+			{
+				int polyMode;
+				glGetIntegerv(GL_POLYGON_MODE, &polyMode);
+				if (polyMode == GL_LINE) {
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				} else {
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 				}
-				break;
-			default:
-				break;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 }
