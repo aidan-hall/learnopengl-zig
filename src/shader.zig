@@ -102,6 +102,7 @@ pub const Shader = struct {
     pub inline fn getUniform(self: Shader, name: [:0]const u8) !c.GLint {
         var location = c.glGetUniformLocation(self.id, @ptrCast([*c]const u8, name));
         if (location == -1) {
+            std.log.err("Uniform not found: {}", .{name});
             return Error.UniformUnfound;
         } else {
             return location;
@@ -111,14 +112,14 @@ pub const Shader = struct {
         const location = try self.getUniform(name);
         switch (T) {
             f32 => c.glUniform1f(location, value),
-            [2]f32 => c.glUniform2f(location, &value),
-            [3]f32 => c.glUniform3f(location, &value),
-            [4]f32 => c.glUniform4f(location, &value),
+            [2]f32 => c.glUniform2f(location, value[0], value[1]),
+            [3]f32 => c.glUniform3f(location, value[0], value[1], value[2]),
+            [4]f32 => c.glUniform4f(location, value[0], value[1], value[2], value[3]),
             bool => c.glUniform1i(location, @intCast(c.GLint, value)),
             i32 => c.glUniform1i(location, value),
-            [2]i32 => c.glUniform2i(location, &value),
-            [3]i32 => c.glUniform3i(location, &value),
-            [4]i32 => c.glUniform4i(location, &value),
+            [2]i32 => c.glUniform2i(location, value[0], value[1]),
+            [3]i32 => c.glUniform3i(location, value[0], value[1], value[2]),
+            [4]i32 => c.glUniform4i(location, value[0], value[1], value[2], value[3]),
             else => Error.NoUniformType,
         }
     }

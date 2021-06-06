@@ -85,8 +85,8 @@ pub fn main() !void {
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
-        // var green = (std.math.sin(time) / 2.0) + 0.5;
-        // try shaderProgram.setUniform([3]f32, "ourColour", [3]f32{0.0, green, 0.0});
+        var green = (std.math.sin(time / 3) / 2.0) + 0.5;
+        try shaderProgram.setUniform([3]f32, "ourColour", [3]f32{ 0.0, green, 0.0 });
         // var ourColourLoc = c.glGetUniformLocation(shaderProgram, "ourColour");
         // var timeLoc = try shaderProgram.getUniform("glfwTime");
         // c.glUniform4f(ourColourLoc, 0.0, green, 0.0, 1.0);
