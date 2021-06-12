@@ -17,7 +17,7 @@ farb_Image *farb_read(FILE *imageFile) {
 		return NULL;
 
 	// 'farbfeld' header
-	if (fseek(imageFile, 8, SEEK_SET) != 0) {
+	if (fseek(imageFile, sizeof("farbfeld")-sizeof(""), SEEK_SET) != 0) {
 		free(image);
 		return NULL;
 	}
