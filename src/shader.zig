@@ -59,7 +59,7 @@ pub const Shader = struct {
         if (success != c.GL_TRUE) {
             var infoLog: [512]u8 = undefined;
             c.glGetShaderInfoLog(self, infoLog.len, null, @ptrCast([*c]u8, &infoLog));
-            std.log.err("Shader compilation failed: {}", .{infoLog});
+            std.log.err("Shader compilation failed: {s}", .{infoLog});
             return Error.Compile;
         }
     }
@@ -91,7 +91,7 @@ pub const Shader = struct {
         if (success != c.GL_TRUE) {
             var infoLog: [512]u8 = undefined;
             c.glGetProgramInfoLog(id, infoLog.len, null, @ptrCast([*c]u8, &infoLog));
-            std.log.err("Shader program linking failed: {}", .{infoLog});
+            std.log.err("Shader program linking failed: {s}", .{infoLog});
             return Error.Link;
         }
         return Shader{ .id = id };
@@ -102,7 +102,7 @@ pub const Shader = struct {
     pub inline fn getUniform(self: Shader, name: [:0]const u8) !c.GLint {
         var location = c.glGetUniformLocation(self.id, @ptrCast([*c]const u8, name));
         if (location == -1) {
-            std.log.err("Uniform not found: {}", .{name});
+            std.log.err("Uniform not found: {s}", .{name});
             return Error.UniformUnfound;
         } else {
             return location;
