@@ -1,6 +1,5 @@
 const c = @cImport({
     @cInclude("sigl.h");
-    @cDefine("STB_IMAGE_IMPLEMENTATION", "1");
     @cInclude("farbfeld.h");
 });
 
@@ -19,11 +18,14 @@ pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
 
     // zig fmt: off
+    const scale_factor = 2.0;
+    const front = 0.5 / scale_factor;
+    const back = 1.0 - 0.5 / scale_factor;
     const vertices = [_]f32{
-        1.0, 1.0, 0.0, 0.9, 0.0, 0.0, 1.0, 1.0, // top right
-        1.0, -1.0, 0.0, 0.0, 0.9, 0.0, 1.0, 0.0, // bottom right
-        -1.0, -1.0, 0.0, 0.0, 0.0, 0.9, 0.0, 0.0, // bottom left
-        -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, 0.0, 1.0, // top left
+        1.0, 1.0, 0.0, 0.9, 0.0, 0.0, back, back, // top right
+        1.0, -1.0, 0.0, 0.0, 0.9, 0.0, back, front, // bottom right
+        -1.0, -1.0, 0.0, 0.0, 0.0, 0.9, front, front, // bottom left
+        -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, front, back, // top left
         // 0.0, -1.0, 0.0, 0.0, 0.9, 0.9, // bottom middle
     };
     const indices = [_]u32{
@@ -76,24 +78,14 @@ pub fn main() !void {
 
         // filtering and mipmaps
         c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR_MIPMAP_LINEAR);
-        c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MAG_FILTER, c.GL_NEAREST);
+        c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR);
 
         // mipmaps
     }
 
     // texture loading
-    var texture: c_uint = undefined;
-    {
-        var image: *c.farb_Image = c.farb_load("container.ff") orelse return error.ImageLoadFailed;
-        defer c.farb_destroy(image);
-
-        std.log.info("Loaded image of width {} and height {}", .{ image.width, image.height });
-
-        c.glGenTextures(1, &texture);
-        c.glBindTexture(c.GL_TEXTURE_2D, texture);
-        c.glTexImage2D(c.GL_TEXTURE_2D, 0, c.GL_RGBA, image.width, image.height, 0, c.GL_RGBA, c.GL_UNSIGNED_SHORT, image.data);
-        c.glGenerateMipmap(c.GL_TEXTURE_2D);
-    }
+    var boxTexture = try loadFarbfeldImage("wall.ff", c.GL_TEXTURE0);
+    var wallTexture = try loadFarbfeldImage("face.ff", c.GL_TEXTURE1);
 
     // vertex array object: Stores attributes for a vbo.
     var vao: c.GLuint = undefined;
@@ -127,8 +119,11 @@ pub fn main() !void {
 
     // preparation
     c.glClearColor(0.2, 0.3, 0.3, 1.0);
-    c.glBindTexture(c.GL_TEXTURE_2D, texture);
+    // c.glBindTexture(c.GL_TEXTURE_2D, wallTexture);
     c.glBindVertexArray(vao);
+
+    try shaderProgram.setUniform(i32, "boxTexture", 0);
+    try shaderProgram.setUniform(i32, "wallTexture", 1);
 
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
@@ -151,4 +146,20 @@ pub fn main() !void {
         c.glfwSwapBuffers(win);
         c.glfwPollEvents();
     }
+}
+
+fn loadFarbfeldImage(name: [:0]const u8, textureUnit: c.GLenum) !c.GLuint {
+    var texture: c.GLuint = undefined;
+    var image: *c.farb_Image = c.farb_load(name) orelse return error.ImageLoadFailed;
+    defer c.farb_destroy(image);
+
+    std.log.info("Loaded image of width {} and height {}", .{ image.width, image.height });
+
+    c.glGenTextures(1, &texture);
+    c.glActiveTexture(textureUnit);
+    c.glBindTexture(c.GL_TEXTURE_2D, texture);
+    c.glTexImage2D(c.GL_TEXTURE_2D, 0, c.GL_RGBA, image.width, image.height, 0, c.GL_RGBA, c.GL_UNSIGNED_SHORT, image.data);
+    c.glGenerateMipmap(c.GL_TEXTURE_2D);
+
+    return texture;
 }

@@ -18,8 +18,9 @@ void main()
 	gl_Position.y = aPos.y * (1.0 - wobbleFactor) + cos(glfwTime * aPos.y) * wobbleFactor/2
 		+ sin(glfwTime * aPos.y) * wobbleFactor/2;
 
-	/* vertexColour = (aPos + aColour) / 2.0; */
-	/* vertexColour = (aColour - aPos) * cos(glfwTime/2.0); */
+	vertexColour = (aPos + aColour) / 2.0;
+	vertexColour = (aColour - aPos) * cos(glfwTime/2.0);
+
 	/* gl_Position = vec4(aPos, 1.0); */
 	vertexColour = aColour;
 	TexCoord = vec2(aTexCoord.x, aTexCoord.y);

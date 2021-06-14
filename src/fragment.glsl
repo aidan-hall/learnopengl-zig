@@ -7,7 +7,8 @@ in vec2 TexCoord;
 uniform float glfwTime;
 uniform vec3 ourColour;
 
-uniform sampler2D ourTexture;
+uniform sampler2D boxTexture;
+uniform sampler2D wallTexture;
 
 void main()
 {
@@ -17,7 +18,16 @@ void main()
 	/* float minColour = min(FragColor.r, min(FragColor.g, FragColor.b)); */
 	/* FragColor -= vec4(minColour, minColour, minColour, 2.0)/2.0; */
 
-	FragColor = texture(ourTexture, TexCoord);
+	FragColor = mix(
+			texture(boxTexture, vec2(TexCoord.x + sin(TexCoord.y * 5.0f + glfwTime)/40.0f, TexCoord.y)),
+			texture(wallTexture, vec2(TexCoord.x, 1.0 - TexCoord.y + sin(TexCoord.x * 20.0f + glfwTime)/30.0f)),
+			sin(glfwTime)*0.25f + 0.75f
+			);
+	/* FragColor = mix( */
+	/* 		texture(boxTexture, TexCoord), */
+	/* 		texture(wallTexture, TexCoord), */
+	/* 		0.5f */
+	/* 		); */
 	FragColor.r *= (cos(glfwTime + 6.123/3) * 0.5f) + 1.0f;
 	FragColor.g *= (cos(glfwTime) * 0.5f) + 1.0f;
 	FragColor.b *= (cos(glfwTime - 6.123/3) * 0.5f) + 1.0f;
