@@ -18,14 +18,11 @@ pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
 
     // zig fmt: off
-    const scale_factor = 2.0;
-    const front = 0.5 / scale_factor;
-    const back = 1.0 - 0.5 / scale_factor;
     const vertices = [_]f32{
-        1.0, 1.0, 0.0, 0.9, 0.0, 0.0, back, back, // top right
-        1.0, -1.0, 0.0, 0.0, 0.9, 0.0, back, front, // bottom right
-        -1.0, -1.0, 0.0, 0.0, 0.0, 0.9, front, front, // bottom left
-        -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, front, back, // top left
+        1.0, 1.0, 0.0,
+        1.0, -1.0, 0.0,
+        -1.0, -1.0, 0.0,
+        -1.0, 1.0, 0.0,
         // 0.0, -1.0, 0.0, 0.0, 0.9, 0.9, // bottom middle
     };
     const indices = [_]u32{
@@ -33,15 +30,15 @@ pub fn main() !void {
         1, 2, 3, // second triangle
         // 1, 2, 4, // third triangle
     };
-    const textureCoords = [_]f32{
-        0.0, 0.0, // lower-left
-        1.0, 0.0, // lower-right
-        0.5, 1.0, // top-center
-    };
+    // const textureCoords = [_]f32{
+    //     0.0, 0.0, // lower-left
+    //     1.0, 0.0, // lower-right
+    //     0.5, 1.0, // top-center
+    // };
     // zig fmt: on
 
     // Setup.
-    var win = c.setup(200, 200, "Nice GLFW", null, null) orelse return error.SiglInit;
+    var win = c.setup(1000, 1000, "Nice GLFW", null, null) orelse return error.SiglInit;
     defer c.cleanup(win);
 
     {
@@ -66,26 +63,9 @@ pub fn main() !void {
     };
     shaderProgram.use();
 
-    // texture rendering parameters:
-    {
-        // wrapping
-        c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_WRAP_S, c.GL_MIRRORED_REPEAT);
-        c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_WRAP_T, c.GL_MIRRORED_REPEAT);
-
-        // border
-        const borderColour = [_]f32{ 1.0, 1.0, 0.0, 1.0 };
-        c.glTexParameterfv(c.GL_TEXTURE_2D, c.GL_TEXTURE_BORDER_COLOR, &borderColour);
-
-        // filtering and mipmaps
-        c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR_MIPMAP_LINEAR);
-        c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR);
-
-        // mipmaps
-    }
-
     // texture loading
-    var boxTexture = try loadFarbfeldImage("wall.ff", c.GL_TEXTURE0);
-    var wallTexture = try loadFarbfeldImage("face.ff", c.GL_TEXTURE1);
+    // var boxTexture = try loadFarbfeldImage("wall.ff", c.GL_TEXTURE0);
+    // var wallTexture = try loadFarbfeldImage("face.ff", c.GL_TEXTURE1);
 
     // vertex array object: Stores attributes for a vbo.
     var vao: c.GLuint = undefined;
@@ -107,13 +87,13 @@ pub fn main() !void {
 
     // vertex attributes
     // position
-    c.glVertexAttribPointer(0, 3, try glTypeID(f32), glBool(false), 8 * @sizeOf(f32), null);
+    c.glVertexAttribPointer(0, 3, try glTypeID(f32), glBool(false), 3 * @sizeOf(f32), null);
     c.glEnableVertexAttribArray(0);
     // colour
-    c.glVertexAttribPointer(1, 3, try glTypeID(f32), glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 3 * @sizeOf(f32)));
-    c.glEnableVertexAttribArray(1);
-    c.glVertexAttribPointer(2, 2, try glTypeID(f32), glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 6 * @sizeOf(f32)));
-    c.glEnableVertexAttribArray(2);
+    // c.glVertexAttribPointer(1, 3, try glTypeID(f32), glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 3 * @sizeOf(f32)));
+    // c.glEnableVertexAttribArray(1);
+    // c.glVertexAttribPointer(2, 2, try glTypeID(f32), glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 6 * @sizeOf(f32)));
+    // c.glEnableVertexAttribArray(2);
 
     //...
 
@@ -122,18 +102,68 @@ pub fn main() !void {
     // c.glBindTexture(c.GL_TEXTURE_2D, wallTexture);
     c.glBindVertexArray(vao);
 
-    try shaderProgram.setUniform(i32, "boxTexture", 0);
-    try shaderProgram.setUniform(i32, "wallTexture", 1);
+    var zoom_size: f32 = 2.0;
+    var position = [2]f32{ 0.0, 0.0 };
+    var max_count: i32 = 300;
+    var shade_scale: f32 = 5;
+
+    // try shaderProgram.setUniform(i32, "boxTexture", 0);
+    // try shaderProgram.setUniform(i32, "wallTexture", 1);
 
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
+
+        if (c.glfwGetKey(win, c.GLFW_KEY_C) == c.GLFW_PRESS) {
+            max_count += 5;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_V) == c.GLFW_PRESS) {
+            max_count -= 5;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_Z) == c.GLFW_PRESS) {
+            zoom_size *= 0.99;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_X) == c.GLFW_PRESS) {
+            zoom_size *= 1.01;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_A) == c.GLFW_PRESS) {
+            shade_scale *= 0.99;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_S) == c.GLFW_PRESS) {
+            shade_scale *= 1.01;
+        }
+
+        if (c.glfwGetKey(win, c.GLFW_KEY_UP) == c.GLFW_PRESS) {
+            position[1] += 0.01 * zoom_size;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_DOWN) == c.GLFW_PRESS) {
+            position[1] -= 0.01 * zoom_size;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_RIGHT) == c.GLFW_PRESS) {
+            position[0] += 0.01 * zoom_size;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_LEFT) == c.GLFW_PRESS) {
+            position[0] -= 0.01 * zoom_size;
+        }
+
+        if (c.glfwGetKey(win, c.GLFW_KEY_R) == c.GLFW_PRESS) {
+            position = [2]f32{ 0, 0 };
+            zoom_size = 2.0;
+            max_count = 300;
+            shade_scale = 5;
+        }
+
+        try shaderProgram.setUniform(f32, "size", zoom_size);
+        try shaderProgram.setUniform([2]f32, "position", position);
+        try shaderProgram.setUniform(i32, "max_count", max_count);
+        try shaderProgram.setUniform(f32, "shade_scale", shade_scale);
+
         // var green = (std.math.sin(time / 3) / 2.0) + 0.5;
         // try shaderProgram.setUniform([3]f32, "ourColour", [3]f32{ 0.0, green, 0.0 });
         // var ourColourLoc = c.glGetUniformLocation(shaderProgram, "ourColour");
         // var timeLoc = try shaderProgram.getUniform("glfwTime");
         // c.glUniform4f(ourColourLoc, 0.0, green, 0.0, 1.0);
-        try shaderProgram.setUniform(f32, "glfwTime", time);
+        // try shaderProgram.setUniform(f32, "glfwTime", time);
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);
@@ -141,7 +171,7 @@ pub fn main() !void {
         c.glDrawElements(c.GL_TRIANGLES, 6, try glTypeID(@TypeOf(indices[0])), null);
         // c.glDrawArrays(c.GL_TRIANGLES, 0, 6);
 
-        std.time.sleep(std.time.ns_per_s / 60);
+        // std.time.sleep(std.time.ns_per_s / 60);
         // Events and Buffers
         c.glfwSwapBuffers(win);
         c.glfwPollEvents();

@@ -1,34 +1,38 @@
 #version 330 core
 out vec4 FragColor;
 
-in vec3 vertexColour;
-in vec2 TexCoord;
+in highp vec3 coord;
+uniform float size;
+uniform vec2 position;
 
-uniform float glfwTime;
-uniform vec3 ourColour;
+uniform int max_count;
+uniform float shade_scale;
 
-uniform sampler2D boxTexture;
-uniform sampler2D wallTexture;
+float asdf(float perc) {
+	return 1-tanh(perc * shade_scale);
+}
 
 void main()
 {
-	/* FragColor = vec4((ourColour+vertexColour)*sin(glfwTime)/4.0f, 1.0) + vec4(0.5f, 0.3f, 0.2f, 1.0f); */
-	/* FragColor.b += (sin(glfwTime * 200 * vertexColour.y * vertexColour.x)/2.0f) + 0.5f; */
-	/* FragColor.r += (sin(glfwTime * vertexColour.x)/2.0f) + 0.5f; */
-	/* float minColour = min(FragColor.r, min(FragColor.g, FragColor.b)); */
-	/* FragColor -= vec4(minColour, minColour, minColour, 2.0)/2.0; */
+	int count = 0;
+	highp vec2 c = position + coord.xy * size;
+	vec2 z = vec2(0, 0);
+	vec2 z_squ = vec2(0, 0);
 
-	FragColor = mix(
-			texture(boxTexture, vec2(TexCoord.x + sin(TexCoord.y * 5.0f + glfwTime)/40.0f, TexCoord.y)),
-			texture(wallTexture, vec2(TexCoord.x, 1.0 - TexCoord.y + sin(TexCoord.x * 20.0f + glfwTime)/30.0f)),
-			sin(glfwTime)*0.25f + 0.75f
+	while (count < max_count && z_squ.x + z_squ.y <= 4) {
+		count += 1;
+		z_squ = vec2(z.x * z.x, z.y * z.y);
+		float xtemp = z_squ.x - z_squ.y;
+		z.y = 2 * z.x * z.y + c.y;
+		z.x = xtemp + c.x;
+	}
+
+	float perc = float(count) / max_count;
+	float shade = asdf(perc);
+	FragColor = vec4(
+			shade,
+			shade,
+			shade,
+			0.0f
 			);
-	/* FragColor = mix( */
-	/* 		texture(boxTexture, TexCoord), */
-	/* 		texture(wallTexture, TexCoord), */
-	/* 		0.5f */
-	/* 		); */
-	FragColor.r *= (cos(glfwTime + 6.123/3) * 0.5f) + 1.0f;
-	FragColor.g *= (cos(glfwTime) * 0.5f) + 1.0f;
-	FragColor.b *= (cos(glfwTime - 6.123/3) * 0.5f) + 1.0f;
 }
