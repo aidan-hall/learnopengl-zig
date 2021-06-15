@@ -125,6 +125,9 @@ pub fn main() !void {
     try shaderProgram.setUniform(i32, "boxTexture", 0);
     try shaderProgram.setUniform(i32, "wallTexture", 1);
 
+    var wave_speed: f32 = 1.0;
+    var faceOpacity: f32 = 0.5;
+
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
@@ -133,7 +136,21 @@ pub fn main() !void {
         // var ourColourLoc = c.glGetUniformLocation(shaderProgram, "ourColour");
         // var timeLoc = try shaderProgram.getUniform("glfwTime");
         // c.glUniform4f(ourColourLoc, 0.0, green, 0.0, 1.0);
-        try shaderProgram.setUniform(f32, "glfwTime", time);
+
+        if (c.glfwGetKey(win, c.GLFW_KEY_LEFT) == c.GLFW_PRESS) {
+            faceOpacity += 0.05;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_RIGHT) == c.GLFW_PRESS) {
+            faceOpacity -= 0.05;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_UP) == c.GLFW_PRESS) {
+            wave_speed += 0.1;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_DOWN) == c.GLFW_PRESS) {
+            wave_speed -= 0.1;
+        }
+        try shaderProgram.setUniform(f32, "glfwTime", time * wave_speed);
+        try shaderProgram.setUniform(f32, "faceOpacity", faceOpacity);
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);

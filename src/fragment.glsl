@@ -6,6 +6,7 @@ in vec2 TexCoord;
 
 uniform float glfwTime;
 uniform vec3 ourColour;
+uniform float faceOpacity;
 
 uniform sampler2D boxTexture;
 uniform sampler2D wallTexture;
@@ -21,7 +22,7 @@ void main()
 	FragColor = mix(
 			texture(boxTexture, vec2(TexCoord.x + sin(TexCoord.y * 5.0f + glfwTime)/40.0f, TexCoord.y)),
 			texture(wallTexture, vec2(TexCoord.x, 1.0 - TexCoord.y + sin(TexCoord.x * 20.0f + glfwTime)/30.0f)),
-			sin(glfwTime)*0.25f + 0.75f
+			faceOpacity
 			);
 	/* FragColor = mix( */
 	/* 		texture(boxTexture, TexCoord), */
