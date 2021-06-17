@@ -6,13 +6,38 @@ const c = @cImport({
 const std = @import("std");
 usingnamespace @import("utilgl.zig");
 usingnamespace @import("shader.zig");
+usingnamespace @import("matmaths.zig");
 
-// const Image = struct {
-//     width: i32,
-//     height: i32,
-//     nrChannels: i32,
-//     data: *u8,
-// };
+fn rotateMatrix2D(angle: f32) mat(4) {
+    const m = std.math;
+    // zig fmt: off
+    return mat(4) {
+        m.cos(angle), -m.sin(angle), 0, 0,
+        m.sin(angle), m.cos(angle), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+    };
+    // zig fmt: on
+}
+
+fn translateMatrix(motion: vec(3)) mat(4) {
+    // zig fmt: off
+    return mat(4){
+        1, 0, 0, motion[0],
+        0, 1, 0, motion[1],
+        0, 0, 1, motion[2],
+        0, 0, 0, 1
+    };
+}
+
+fn scaleMatrix(scale: f32) mat(4) {
+    return mat(4){
+        scale, 0,     0,     0,
+        0,     scale, 0,     0,
+        0,     0,     scale, 0,
+        0,     0,     0,     1,
+    };
+}
 
 pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
@@ -79,8 +104,6 @@ pub fn main() !void {
         // filtering and mipmaps
         c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR_MIPMAP_LINEAR);
         c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR);
-
-        // mipmaps
     }
 
     // texture loading
@@ -151,6 +174,17 @@ pub fn main() !void {
         }
         try shaderProgram.setUniform(f32, "glfwTime", time * wave_speed);
         try shaderProgram.setUniform(f32, "faceOpacity", faceOpacity);
+
+        // var transform = rotateMatrix2D(time);
+        // var transform = translateMatrix(vec(3){ std.math.cos(time) / 4.0, std.math.sin(time) / 4.0, 0.0 });
+        var transform = matProd(&[_]mat(4){ rotateMatrix2D(-time), translateMatrix(vec(3){ std.math.sin(time), std.math.cos(time), 0 }), scaleMatrix(0.25 * (1 + std.math.sin(time / 3))) });
+        // var transform = mat(4){
+        //     1, 0, 0, std.math.sin(time),
+        //     0, 1, 0, 0,
+        //     0, 0, 1, 0,
+        //     0, 0, 0, 1,
+        // };
+        try shaderProgram.setUniform(*mat(4), "transMat", &transform);
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);

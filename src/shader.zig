@@ -3,6 +3,7 @@ const c = @cImport({
 });
 
 const std = @import("std");
+const matma = @import("matmaths.zig");
 
 // An OpenGL 'Shader Program'.
 pub const Shader = struct {
@@ -120,6 +121,7 @@ pub const Shader = struct {
             [2]i32 => c.glUniform2i(location, value[0], value[1]),
             [3]i32 => c.glUniform3i(location, value[0], value[1], value[2]),
             [4]i32 => c.glUniform4i(location, value[0], value[1], value[2], value[3]),
+            *matma.mat(4) => c.glUniformMatrix4fv(location, 1, c.GL_TRUE, @ptrCast([*c]const f32, value)),
             else => Error.NoUniformType,
         }
     }
