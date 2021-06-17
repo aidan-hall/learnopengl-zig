@@ -154,11 +154,6 @@ pub fn main() !void {
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
-        // var green = (std.math.sin(time / 3) / 2.0) + 0.5;
-        // try shaderProgram.setUniform([3]f32, "ourColour", [3]f32{ 0.0, green, 0.0 });
-        // var ourColourLoc = c.glGetUniformLocation(shaderProgram, "ourColour");
-        // var timeLoc = try shaderProgram.getUniform("glfwTime");
-        // c.glUniform4f(ourColourLoc, 0.0, green, 0.0, 1.0);
 
         if (c.glfwGetKey(win, c.GLFW_KEY_LEFT) == c.GLFW_PRESS) {
             faceOpacity += 0.05;
@@ -177,7 +172,7 @@ pub fn main() !void {
 
         // var transform = rotateMatrix2D(time);
         // var transform = translateMatrix(vec(3){ std.math.cos(time) / 4.0, std.math.sin(time) / 4.0, 0.0 });
-        var transform = matProd(&[_]mat(4){ rotateMatrix2D(-time), translateMatrix(vec(3){ std.math.sin(time), std.math.cos(time), 0 }), scaleMatrix(0.25 * (1 + std.math.sin(time / 3))) });
+        var transform = matProd(&[_]mat(4){ rotateMatrix2D(-2.0 * time), translateMatrix(vec(3){ std.math.sin(time), std.math.cos(time), 0 }), scaleMatrix(0.25 * (1 + std.math.sin(wave_speed * time / 3))) });
         // var transform = mat(4){
         //     1, 0, 0, std.math.sin(time),
         //     0, 1, 0, 0,
