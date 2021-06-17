@@ -173,17 +173,24 @@ pub fn main() !void {
         // var transform = rotateMatrix2D(time);
         // var transform = translateMatrix(vec(3){ std.math.cos(time) / 4.0, std.math.sin(time) / 4.0, 0.0 });
         var transform = matProd(&[_]mat(4){ rotateMatrix2D(-2.0 * time), translateMatrix(vec(3){ std.math.sin(time), std.math.cos(time), 0 }), scaleMatrix(0.25 * (1 + std.math.sin(wave_speed * time / 3))) });
+        var otherTransform = matProd(&[_]mat(4){ scaleMatrix(std.math.sin(time)), translateMatrix(vec(3){ -0.5, 0.5, 0.0 }) });
         // var transform = mat(4){
         //     1, 0, 0, std.math.sin(time),
         //     0, 1, 0, 0,
         //     0, 0, 1, 0,
         //     0, 0, 0, 1,
         // };
-        try shaderProgram.setUniform(*mat(4), "transMat", &transform);
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);
         c.glBindBuffer(c.GL_ELEMENT_ARRAY_BUFFER, ebo);
+
+        // 'Second' box
+        try shaderProgram.setUniform(*mat(4), "transMat", &otherTransform);
+        c.glDrawElements(c.GL_TRIANGLES, 6, try glTypeID(@TypeOf(indices[0])), null);
+
+        // First box
+        try shaderProgram.setUniform(*mat(4), "transMat", &transform);
         c.glDrawElements(c.GL_TRIANGLES, 6, try glTypeID(@TypeOf(indices[0])), null);
         // c.glDrawArrays(c.GL_TRIANGLES, 0, 6);
 
