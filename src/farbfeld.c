@@ -1,17 +1,8 @@
 #include "farbfeld.h"
+#include "endian/endian.h"
 
 #include <stdlib.h>
 
-uint32_t netbyte_to_hostbyte(uint32_t netlong) {
-	uint32_t hostlong;
-	char *netbytes = (char*)(&netlong);
-
-	hostlong = (netbytes[0]>>8*3)|(netbytes[1]>>8*1)|(netbytes[2]<<8*1)|(netbytes[3]<<8*3);
-
-	return hostlong;
-
-	return ((netlong&0xFF000000) >> 8*3)|((netlong&0x00FF0000) >> 8*2)|((netlong&0x0000FF00) << 8*1)|((netlong&0x000000FF) << 8*3);
-}
 
 farb_Image *farb_read(FILE *imageFile) {
 	farb_Image *image = malloc(sizeof(farb_Image));
@@ -31,13 +22,13 @@ farb_Image *farb_read(FILE *imageFile) {
 			free(image);
 			return NULL;
 		}
-		image->width = netbyte_to_hostbyte(widthBuffer);
+		image->width = be32toh(widthBuffer);
 
 		if (fread(&heightBuffer, sizeof(uint32_t), 1, imageFile) != 1) {
 			free(image);
 			return NULL;
 		}
-		image->height = netbyte_to_hostbyte(heightBuffer);
+		image->height = be32toh(heightBuffer);
 	}
 
 	image->data = malloc(image->width * image->height * 4 * sizeof(uint16_t));

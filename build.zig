@@ -15,7 +15,7 @@ pub fn build(b: *Builder) void {
     const exe = b.addExecutable("getting-started-hybrid", "src/main.zig");
 
     exe.addIncludeDir("include");
-    exe.addIncludeDir("external");
+    exe.addIncludeDir("deps");
     exe.addCSourceFile("src/glad.c", &[_][]const u8{});
     exe.addCSourceFile("src/sigl.c", &[_][]const u8{});
     exe.addCSourceFile("src/farbfeld.c", &[_][]const u8{});
