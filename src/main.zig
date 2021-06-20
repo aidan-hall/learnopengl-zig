@@ -39,6 +39,16 @@ fn scaleMatrix(scale: f32) mat(4) {
     };
 }
 
+fn simpleOrthographicProjection(centre: vec(3), scale: vec(3)) mat(4) {
+    var scaledCentre = centre / scale;
+    return .{
+        1.0/scale[0], 0, 0, -scaledCentre[0],
+        0, 1.0/scale[1], 0, -scaledCentre[1],
+        0, 0, -1.0/scale[2], scaledCentre[2],
+        0, 0, 0, 1.0,
+    };
+}
+
 pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
 
@@ -77,11 +87,11 @@ pub fn main() !void {
 
     var shaderProgram = shadProcBlk: {
         var shaderSources = [_]Shader.Source{
-            Shader.Source{
+            .{
                 .shaderType = c.GL_VERTEX_SHADER,
                 .code = @embedFile("vertex.glsl"),
             },
-            Shader.Source{
+            .{
                 .shaderType = c.GL_FRAGMENT_SHADER,
                 .code = @embedFile("fragment.glsl"),
             },
@@ -151,10 +161,31 @@ pub fn main() !void {
     var wave_speed: f32 = 1.0;
     var faceOpacity: f32 = 0.5;
 
+    // projection
+    var camCentre = vec(3){ 0.0, 0.0, -1.0 };
+    var camScales = vec(3){ 1.0, 1.0, 100.0 };
+    var viewportSize: [4]f32 = undefined;
+
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
+        c.glGetFloatv(c.GL_VIEWPORT, &viewportSize);
+        camScales[0] = viewportSize[2] / (1000.0);
+        camScales[1] = viewportSize[3] / (1000.0);
+        // std.log.info("Viewport size: {} {}.", .{ camScales[0], camScales[1] });
 
+        if (c.glfwGetKey(win, c.GLFW_KEY_A) == c.GLFW_PRESS) {
+            camCentre[0] -= 0.05;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_D) == c.GLFW_PRESS) {
+            camCentre[0] += 0.05;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_W) == c.GLFW_PRESS) {
+            camCentre[1] += 0.05;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_S) == c.GLFW_PRESS) {
+            camCentre[1] -= 0.05;
+        }
         if (c.glfwGetKey(win, c.GLFW_KEY_LEFT) == c.GLFW_PRESS) {
             faceOpacity += 0.05;
         }
@@ -169,20 +200,14 @@ pub fn main() !void {
         }
         try shaderProgram.setUniform(f32, "glfwTime", time * wave_speed);
         try shaderProgram.setUniform(f32, "faceOpacity", faceOpacity);
+        try shaderProgram.setUniform(*mat(4), "projection", &simpleOrthographicProjection(camCentre, camScales));
 
-        // var transform = rotateMatrix2D(time);
-        // var transform = translateMatrix(vec(3){ std.math.cos(time) / 4.0, std.math.sin(time) / 4.0, 0.0 });
-        var transform = matProd(&[_]mat(4){ rotateMatrix2D(-2.0 * time), translateMatrix(vec(3){ std.math.sin(time), std.math.cos(time), 0 }), scaleMatrix(0.25 * (1 + std.math.sin(wave_speed * time / 3))) });
-        var otherTransform = matProd(&[_]mat(4){ scaleMatrix(std.math.sin(time)), translateMatrix(vec(3){ -0.5, 0.5, 0.0 }) });
-        // var transform = mat(4){
-        //     1, 0, 0, std.math.sin(time),
-        //     0, 1, 0, 0,
-        //     0, 0, 1, 0,
-        //     0, 0, 0, 1,
-        // };
+        // translated in positive z direction so it will always be in front.
+        var transform = matProd(&[_]mat(4){ rotateMatrix2D(-2.0 * time), translateMatrix(.{ std.math.sin(time), std.math.cos(time), 1.0 }), scaleMatrix(0.25 * (1 + std.math.sin(wave_speed * time / 3))) });
+        var otherTransform = matProd(&[_]mat(4){ scaleMatrix(std.math.sin(time)), translateMatrix(.{ -0.5, 0.5, 0.0 }) });
 
         // Rendering
-        c.glClear(c.GL_COLOR_BUFFER_BIT);
+        c.glClear(c.GL_COLOR_BUFFER_BIT | c.GL_DEPTH_BUFFER_BIT);
         c.glBindBuffer(c.GL_ELEMENT_ARRAY_BUFFER, ebo);
 
         // 'Second' box

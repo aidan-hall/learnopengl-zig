@@ -31,6 +31,8 @@ GLFWmonitor* monitor, GLFWwindow* share
 	// Framebuffer
 	glfwSetFramebufferSizeCallback(win, framebufferSizeCallback);
 	glfwSetKeyCallback(win, keyCallback);
+
+	glEnable(GL_DEPTH_TEST);
 	return win;
 }
 
@@ -51,7 +53,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 		case GLFW_KEY_ESCAPE:
 			glfwSetWindowShouldClose(window, GLFW_TRUE);
 			break;
-		case GLFW_KEY_W:
+		case GLFW_KEY_O:
 			{
 				int polyMode;
 				glGetIntegerv(GL_POLYGON_MODE, &polyMode);
