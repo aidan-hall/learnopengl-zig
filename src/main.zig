@@ -195,6 +195,7 @@ pub fn main() !void {
 
     var wave_speed: f32 = 1.0;
     var faceOpacity: f32 = 0.5;
+    var cameraRotation = [2]f32{ 0.0, 0.0 };
 
     // projection
     var eyeCoords = mat.vec(3){ 0.0, 0.0, -3.0 };
@@ -210,15 +211,15 @@ pub fn main() !void {
         // std.log.info("Viewport size: {} {}.", .{ camScales[0], camScales[1] });
 
         if (c.glfwGetKey(win, c.GLFW_KEY_A) == c.GLFW_PRESS) {
-            eyeCoords[0] -= 0.05;
-        }
-        if (c.glfwGetKey(win, c.GLFW_KEY_D) == c.GLFW_PRESS) {
             eyeCoords[0] += 0.05;
         }
-        if (c.glfwGetKey(win, c.GLFW_KEY_W) == c.GLFW_PRESS) {
-            eyeCoords[1] += 0.05;
+        if (c.glfwGetKey(win, c.GLFW_KEY_D) == c.GLFW_PRESS) {
+            eyeCoords[0] -= 0.05;
         }
         if (c.glfwGetKey(win, c.GLFW_KEY_S) == c.GLFW_PRESS) {
+            eyeCoords[1] += 0.05;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_W) == c.GLFW_PRESS) {
             eyeCoords[1] -= 0.05;
         }
         if (c.glfwGetKey(win, c.GLFW_KEY_LEFT) == c.GLFW_PRESS) {
@@ -233,15 +234,27 @@ pub fn main() !void {
         if (c.glfwGetKey(win, c.GLFW_KEY_DOWN) == c.GLFW_PRESS) {
             wave_speed -= 0.1;
         }
+        if (c.glfwGetKey(win, c.GLFW_KEY_Q) == c.GLFW_PRESS) {
+            cameraRotation[0] += 0.05;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_E) == c.GLFW_PRESS) {
+            cameraRotation[0] -= 0.05;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_Z) == c.GLFW_PRESS) {
+            cameraRotation[1] += 0.05;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_C) == c.GLFW_PRESS) {
+            cameraRotation[1] -= 0.05;
+        }
         try shaderProgram.setUniform(f32, "glfwTime", time * wave_speed);
         try shaderProgram.setUniform(f32, "faceOpacity", faceOpacity);
 
-        var projection = mat.matProd(&.{ translateMatrix(eyeCoords), perspectiveProjection(-0.25, 0.25, -0.25, 0.25, 0.1, 10.0) });
+        var projection = mat.matProd(&.{ rotateMatrixX(cameraRotation[1]), rotateMatrixY(cameraRotation[0]), translateMatrix(eyeCoords), perspectiveProjection(-0.25, 0.25, -0.25, 0.25, 0.1, 100.0) });
         try shaderProgram.setUniform(*mat.mat(4), "projection", &projection);
 
         // translated in positive z direction so it will always be in front.
         var transform = mat.matProd(&[_]mat.mat(4){ rotateMatrixX(-2.0 * time), rotateMatrixZ(time), translateMatrix(.{ std.math.sin(time), std.math.cos(time), 1.0 }) });
-        var otherTransform = mat.matProd(&[_]mat.mat(4){translateMatrix(.{ -0.5, 0.5, std.math.sin(time) })});
+        var otherTransform = mat.matProd(&[_]mat.mat(4){translateMatrix(.{ -0.5, 0.5, std.math.sin(time) * 2.0 })});
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT | c.GL_DEPTH_BUFFER_BIT);
