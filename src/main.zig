@@ -98,6 +98,51 @@ pub fn main() !void {
         -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, front, back, // top left
         // 0.0, -1.0, 0.0, 0.0, 0.9, 0.9, // bottom middle
     };
+
+    const cubeVertices = [_]f32 {
+    -0.5, -0.5, -0.5,  0.0, 0.0,
+     0.5, -0.5, -0.5,  1.0, 0.0,
+     0.5,  0.5, -0.5,  1.0, 1.0,
+     0.5,  0.5, -0.5,  1.0, 1.0,
+    -0.5,  0.5, -0.5,  0.0, 1.0,
+    -0.5, -0.5, -0.5,  0.0, 0.0,
+
+    -0.5, -0.5,  0.5,  0.0, 0.0,
+     0.5, -0.5,  0.5,  1.0, 0.0,
+     0.5,  0.5,  0.5,  1.0, 1.0,
+     0.5,  0.5,  0.5,  1.0, 1.0,
+    -0.5,  0.5,  0.5,  0.0, 1.0,
+    -0.5, -0.5,  0.5,  0.0, 0.0,
+
+    -0.5,  0.5,  0.5,  1.0, 0.0,
+    -0.5,  0.5, -0.5,  1.0, 1.0,
+    -0.5, -0.5, -0.5,  0.0, 1.0,
+    -0.5, -0.5, -0.5,  0.0, 1.0,
+    -0.5, -0.5,  0.5,  0.0, 0.0,
+    -0.5,  0.5,  0.5,  1.0, 0.0,
+
+     0.5,  0.5,  0.5,  1.0, 0.0,
+     0.5,  0.5, -0.5,  1.0, 1.0,
+     0.5, -0.5, -0.5,  0.0, 1.0,
+     0.5, -0.5, -0.5,  0.0, 1.0,
+     0.5, -0.5,  0.5,  0.0, 0.0,
+     0.5,  0.5,  0.5,  1.0, 0.0,
+
+    -0.5, -0.5, -0.5,  0.0, 1.0,
+     0.5, -0.5, -0.5,  1.0, 1.0,
+     0.5, -0.5,  0.5,  1.0, 0.0,
+     0.5, -0.5,  0.5,  1.0, 0.0,
+    -0.5, -0.5,  0.5,  0.0, 0.0,
+    -0.5, -0.5, -0.5,  0.0, 1.0,
+
+    -0.5,  0.5, -0.5,  0.0, 1.0,
+     0.5,  0.5, -0.5,  1.0, 1.0,
+     0.5,  0.5,  0.5,  1.0, 0.0,
+     0.5,  0.5,  0.5,  1.0, 0.0,
+    -0.5,  0.5,  0.5,  0.0, 0.0,
+    -0.5,  0.5, -0.5,  0.0, 1.0,
+    };
+
     const indices = [_]u32{
         0, 1, 3, // first triangle
         1, 2, 3, // second triangle
@@ -135,6 +180,22 @@ pub fn main() !void {
         break :shadProcBlk try Shader.makeProgramStrings(&shaderSources, &gpa.allocator);
     };
     shaderProgram.use();
+
+    // Cube shader.
+    var cubeShader = cubeShaderBlk: {
+        var shaderSources = [_]Shader.Source{
+            .{
+                .shaderType = c.GL_VERTEX_SHADER,
+                .code = @embedFile("cubeVertex.glsl"),
+            },
+            .{
+                .shaderType = c.GL_FRAGMENT_SHADER,
+                .code = @embedFile("cubeFragment.glsl"),
+            },
+        };
+        var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+        break :cubeShaderBlk try Shader.makeProgramStrings(&shaderSources, &gpa.allocator);
+    };
 
     // texture rendering parameters:
     {
@@ -183,15 +244,33 @@ pub fn main() !void {
     c.glVertexAttribPointer(2, 2, try ut.glTypeID(f32), ut.glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 6 * @sizeOf(f32)));
     c.glEnableVertexAttribArray(2);
 
-    //...
+    // cube stuff
+    var cubeVao: c.GLuint = undefined;
+    var cubeVbo: c.GLuint = undefined;
+    c.glGenVertexArrays(1, &cubeVao);
+    c.glGenBuffers(1, &cubeVbo);
+
+    c.glBindVertexArray(cubeVao);
+
+    c.glBindBuffer(c.GL_ARRAY_BUFFER, cubeVbo);
+    c.glBufferData(c.GL_ARRAY_BUFFER, @sizeOf(@TypeOf(cubeVertices)), &cubeVertices, c.GL_STATIC_DRAW);
+
+    c.glVertexAttribPointer(0, 3, try ut.glTypeID(f32), ut.glBool(false), 5 * @sizeOf(f32), null);
+    c.glEnableVertexAttribArray(0);
+    c.glVertexAttribPointer(1, 2, try ut.glTypeID(f32), ut.glBool(false), 5 * @sizeOf(f32), @intToPtr(*const c_void, 3 * @sizeOf(f32)));
+    c.glEnableVertexAttribArray(1);
 
     // preparation
     c.glClearColor(0.2, 0.3, 0.3, 1.0);
     // c.glBindTexture(c.GL_TEXTURE_2D, wallTexture);
     c.glBindVertexArray(vao);
 
+    shaderProgram.use();
     try shaderProgram.setUniform(i32, "boxTexture", 0);
     try shaderProgram.setUniform(i32, "wallTexture", 1);
+    cubeShader.use();
+    try cubeShader.setUniform(i32, "boxTexture", 0);
+    try cubeShader.setUniform(i32, "wallTexture", 1);
 
     var wave_speed: f32 = 1.0;
     var faceOpacity: f32 = 0.5;
@@ -258,8 +337,19 @@ pub fn main() !void {
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT | c.GL_DEPTH_BUFFER_BIT);
-        c.glBindBuffer(c.GL_ELEMENT_ARRAY_BUFFER, ebo);
 
+        // cube
+        c.glBindVertexArray(cubeVao);
+        cubeShader.use();
+        var myTrans = mat.Identity;
+        try cubeShader.setUniform(*mat.mat(4), "transMat", &myTrans);
+        try cubeShader.setUniform(*mat.mat(4), "projection", &projection);
+        c.glDrawArrays(c.GL_TRIANGLES, 0, 36);
+
+        // squares
+        c.glBindVertexArray(vao);
+        c.glBindBuffer(c.GL_ELEMENT_ARRAY_BUFFER, ebo);
+        shaderProgram.use();
         // 'Second' box
         try shaderProgram.setUniform(*mat.mat(4), "transMat", &otherTransform);
         c.glDrawElements(c.GL_TRIANGLES, 6, try ut.glTypeID(@TypeOf(indices[0])), null);
