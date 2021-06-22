@@ -4,14 +4,16 @@ const c = @cImport({
 });
 
 const std = @import("std");
-usingnamespace @import("utilgl.zig");
-usingnamespace @import("shader.zig");
-usingnamespace @import("matmaths.zig");
+const ut = @import("utilgl.zig");
+const sha = @import("shader.zig");
+const mat = @import("matmaths.zig");
 
-fn rotateMatrixZ(angle: f32) mat(4) {
+const Shader = sha.Shader;
+
+fn rotateMatrixZ(angle: f32) mat.mat(4) {
     const m = std.math;
     // zig fmt: off
-    return mat(4) {
+    return mat.mat(4) {
         m.cos(angle), -m.sin(angle), 0, 0,
         m.sin(angle), m.cos(angle), 0, 0,
         0, 0, 1, 0,
@@ -20,10 +22,10 @@ fn rotateMatrixZ(angle: f32) mat(4) {
     // zig fmt: on
 }
 
-fn rotateMatrixX(angle: f32) mat(4) {
+fn rotateMatrixX(angle: f32) mat.mat(4) {
     const m = std.math;
     // zig fmt: off
-    return mat(4) {
+    return mat.mat(4) {
         1, 0, 0, 0,
         0, m.cos(angle), -m.sin(angle), 0,
         0, m.sin(angle), m.cos(angle), 0,
@@ -32,10 +34,10 @@ fn rotateMatrixX(angle: f32) mat(4) {
     // zig fmt: on
 }
 
-fn rotateMatrixY(angle: f32) mat(4) {
+fn rotateMatrixY(angle: f32) mat.mat(4) {
     const m = std.math;
     // zig fmt: off
-    return mat(4) {
+    return mat.mat(4) {
         m.cos(angle), 0, m.sin(angle), 0,
         0, 1, 0, 0,
         -m.sin(angle), 0, m.cos(angle), 0,
@@ -44,9 +46,9 @@ fn rotateMatrixY(angle: f32) mat(4) {
     // zig fmt: on
 }
 
-fn translateMatrix(motion: vec(3)) mat(4) {
+fn translateMatrix(motion: mat.vec(3)) mat.mat(4) {
     // zig fmt: off
-    return mat(4){
+    return mat.mat(4){
         1, 0, 0, motion[0],
         0, 1, 0, motion[1],
         0, 0, 1, motion[2],
@@ -54,8 +56,8 @@ fn translateMatrix(motion: vec(3)) mat(4) {
     };
 }
 
-fn scaleMatrix(scale: f32) mat(4) {
-    return mat(4){
+fn scaleMatrix(scale: f32) mat.mat(4) {
+    return mat.mat(4){
         scale, 0,     0,     0,
         0,     scale, 0,     0,
         0,     0,     scale, 0,
@@ -63,7 +65,7 @@ fn scaleMatrix(scale: f32) mat(4) {
     };
 }
 
-fn simpleOrthographicProjection(centre: vec(3), scale: vec(3)) mat(4) {
+fn simpleOrthographicProjection(centre: mat.vec(3), scale: mat.vec(3)) mat.mat(4) {
     var scaledCentre = centre / scale;
     return .{
         1.0/scale[0], 0, 0, -scaledCentre[0],
@@ -73,7 +75,7 @@ fn simpleOrthographicProjection(centre: vec(3), scale: vec(3)) mat(4) {
     };
 }
 
-fn perspectiveProjection(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) mat(4) {
+fn perspectiveProjection(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) mat.mat(4) {
     return .{
         2*n/(r-l), 0, (r+l) / (r-l), 0,
         0, 2*n/(t-b), (b+t) / (t-b), 0,
@@ -173,12 +175,12 @@ pub fn main() !void {
 
     // vertex attributes
     // position
-    c.glVertexAttribPointer(0, 3, try glTypeID(f32), glBool(false), 8 * @sizeOf(f32), null);
+    c.glVertexAttribPointer(0, 3, try ut.glTypeID(f32), ut.glBool(false), 8 * @sizeOf(f32), null);
     c.glEnableVertexAttribArray(0);
     // colour
-    c.glVertexAttribPointer(1, 3, try glTypeID(f32), glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 3 * @sizeOf(f32)));
+    c.glVertexAttribPointer(1, 3, try ut.glTypeID(f32), ut.glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 3 * @sizeOf(f32)));
     c.glEnableVertexAttribArray(1);
-    c.glVertexAttribPointer(2, 2, try glTypeID(f32), glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 6 * @sizeOf(f32)));
+    c.glVertexAttribPointer(2, 2, try ut.glTypeID(f32), ut.glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 6 * @sizeOf(f32)));
     c.glEnableVertexAttribArray(2);
 
     //...
@@ -195,8 +197,8 @@ pub fn main() !void {
     var faceOpacity: f32 = 0.5;
 
     // projection
-    var eyeCoords = vec(3){ 0.0, 0.0, -3.0 };
-    // var camScales = vec(3){ 1.0, 1.0, 100.0 };
+    var eyeCoords = mat.vec(3){ 0.0, 0.0, -3.0 };
+    // var camScales = mat.vec(3){ 1.0, 1.0, 100.0 };
     var viewportSize: [4]f32 = undefined;
 
     // Main Loop
@@ -234,24 +236,24 @@ pub fn main() !void {
         try shaderProgram.setUniform(f32, "glfwTime", time * wave_speed);
         try shaderProgram.setUniform(f32, "faceOpacity", faceOpacity);
 
-        var projection = matProd(&.{ translateMatrix(eyeCoords), perspectiveProjection(-0.25, 0.25, -0.25, 0.25, 0.1, 10.0) });
-        try shaderProgram.setUniform(*mat(4), "projection", &projection);
+        var projection = mat.matProd(&.{ translateMatrix(eyeCoords), perspectiveProjection(-0.25, 0.25, -0.25, 0.25, 0.1, 10.0) });
+        try shaderProgram.setUniform(*mat.mat(4), "projection", &projection);
 
         // translated in positive z direction so it will always be in front.
-        var transform = matProd(&[_]mat(4){ rotateMatrixX(-2.0 * time), rotateMatrixZ(time), translateMatrix(.{ std.math.sin(time), std.math.cos(time), 1.0 }) });
-        var otherTransform = matProd(&[_]mat(4){translateMatrix(.{ -0.5, 0.5, std.math.sin(time) })});
+        var transform = mat.matProd(&[_]mat.mat(4){ rotateMatrixX(-2.0 * time), rotateMatrixZ(time), translateMatrix(.{ std.math.sin(time), std.math.cos(time), 1.0 }) });
+        var otherTransform = mat.matProd(&[_]mat.mat(4){translateMatrix(.{ -0.5, 0.5, std.math.sin(time) })});
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT | c.GL_DEPTH_BUFFER_BIT);
         c.glBindBuffer(c.GL_ELEMENT_ARRAY_BUFFER, ebo);
 
         // 'Second' box
-        try shaderProgram.setUniform(*mat(4), "transMat", &otherTransform);
-        c.glDrawElements(c.GL_TRIANGLES, 6, try glTypeID(@TypeOf(indices[0])), null);
+        try shaderProgram.setUniform(*mat.mat(4), "transMat", &otherTransform);
+        c.glDrawElements(c.GL_TRIANGLES, 6, try ut.glTypeID(@TypeOf(indices[0])), null);
 
         // First box
-        try shaderProgram.setUniform(*mat(4), "transMat", &transform);
-        c.glDrawElements(c.GL_TRIANGLES, 6, try glTypeID(@TypeOf(indices[0])), null);
+        try shaderProgram.setUniform(*mat.mat(4), "transMat", &transform);
+        c.glDrawElements(c.GL_TRIANGLES, 6, try ut.glTypeID(@TypeOf(indices[0])), null);
         // c.glDrawArrays(c.GL_TRIANGLES, 0, 6);
 
         std.time.sleep(std.time.ns_per_s / 60);
