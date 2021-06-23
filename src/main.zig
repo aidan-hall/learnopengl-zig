@@ -284,6 +284,7 @@ pub fn main() !void {
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
+
         // c.glGetFloatv(c.GL_VIEWPORT, &viewportSize);
         // camScales[0] = viewportSize[2] / (1000.0);
         // camScales[1] = viewportSize[3] / (1000.0);
@@ -328,8 +329,8 @@ pub fn main() !void {
         try shaderProgram.setUniform(f32, "glfwTime", time * wave_speed);
         try shaderProgram.setUniform(f32, "faceOpacity", faceOpacity);
 
-        var projection = mat.matProd(&.{ rotateMatrixX(cameraRotation[1]), rotateMatrixY(cameraRotation[0]), translateMatrix(eyeCoords), perspectiveProjection(-0.25, 0.25, -0.25, 0.25, 0.1, 100.0) });
-        try shaderProgram.setUniform(*mat.mat(4), "projection", &projection);
+        var projection = mat.matProd(&.{ rotateMatrixX(cameraRotation[1]), rotateMatrixY(cameraRotation[0]), translateMatrix(eyeCoords), perspectiveProjection(-0.1, 0.1, -0.1, 0.1, 0.1, 100.0) });
+        try shaderProgram.setUniform(*const mat.mat(4), "projection", &projection);
 
         // translated in positive z direction so it will always be in front.
         var transform = mat.matProd(&[_]mat.mat(4){ rotateMatrixX(-2.0 * time), rotateMatrixZ(time), translateMatrix(.{ std.math.sin(time), std.math.cos(time), 1.0 }) });
@@ -338,24 +339,46 @@ pub fn main() !void {
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT | c.GL_DEPTH_BUFFER_BIT);
 
-        // cube
+        // cubes
+
         c.glBindVertexArray(cubeVao);
         cubeShader.use();
-        var myTrans = mat.Identity;
-        try cubeShader.setUniform(*mat.mat(4), "transMat", &myTrans);
-        try cubeShader.setUniform(*mat.mat(4), "projection", &projection);
-        c.glDrawArrays(c.GL_TRIANGLES, 0, 36);
+
+        try cubeShader.setUniform(*const mat.mat(4), "projection", &projection);
+
+        // zig fmt: off
+        var cubeTranslations = [_]mat.mat(4){
+            translateMatrix(.{ 0.0,  0.0,  0.0}),
+            translateMatrix(.{ 2.0,  5.0, -15.0}),
+            translateMatrix(.{-1.5, -2.2, -2.5}),
+            translateMatrix(.{-3.8, -2.0, -12.3}),
+            translateMatrix(.{ 2.4, -0.4, -3.5}),
+            translateMatrix(.{-1.7,  3.0, -7.5}),
+            translateMatrix(.{ 1.3, -2.0, -2.5}),
+            translateMatrix(.{ 1.5,  2.0, -2.5}),
+            translateMatrix(.{ 1.5,  0.2, -1.5}),
+            translateMatrix(.{-1.3,  1.0, -1.5})
+        };
+        // zig fmt: on
+
+        for (cubeTranslations) |translation, idx| {
+            var rotateRate: f32 = if ((idx % 3) == 0) time else @intToFloat(f32, idx);
+            var thisTransform = mat.matProd(&.{ rotateMatrixZ(rotateRate), translation });
+
+            try cubeShader.setUniform(*const mat.mat(4), "transMat", &thisTransform);
+            c.glDrawArrays(c.GL_TRIANGLES, 0, 36);
+        }
 
         // squares
         c.glBindVertexArray(vao);
         c.glBindBuffer(c.GL_ELEMENT_ARRAY_BUFFER, ebo);
         shaderProgram.use();
         // 'Second' box
-        try shaderProgram.setUniform(*mat.mat(4), "transMat", &otherTransform);
+        try shaderProgram.setUniform(*const mat.mat(4), "transMat", &otherTransform);
         c.glDrawElements(c.GL_TRIANGLES, 6, try ut.glTypeID(@TypeOf(indices[0])), null);
 
         // First box
-        try shaderProgram.setUniform(*mat.mat(4), "transMat", &transform);
+        try shaderProgram.setUniform(*const mat.mat(4), "transMat", &transform);
         c.glDrawElements(c.GL_TRIANGLES, 6, try ut.glTypeID(@TypeOf(indices[0])), null);
         // c.glDrawArrays(c.GL_TRIANGLES, 0, 6);
 
