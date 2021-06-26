@@ -18,15 +18,11 @@ pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
 
     // zig fmt: off
-    const scale_factor = 2.0;
-    const front = 0.5 / scale_factor;
-    const back = 1.0 - 0.5 / scale_factor;
     const vertices = [_]f32{
-        1.0, 1.0, 0.0, 0.9, 0.0, 0.0, back, back, // top right
-        1.0, -1.0, 0.0, 0.0, 0.9, 0.0, back, front, // bottom right
-        -1.0, -1.0, 0.0, 0.0, 0.0, 0.9, front, front, // bottom left
-        -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, front, back, // top left
-        // 0.0, -1.0, 0.0, 0.0, 0.9, 0.9, // bottom middle
+        1.0, 1.0, 0.0, 0.9, 0.0, 0.0, 0.0, 0.0, // top right
+        1.0, -1.0, 0.0, 0.0, 0.9, 0.0, 0.0, 1.0, // bottom right
+        -1.0, -1.0, 0.0, 0.0, 0.0, 0.9, 1.0, 1.0, // bottom left
+        -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, 1.0, 0.0, // top left
     };
     const indices = [_]u32{
         0, 1, 3, // first triangle
@@ -127,13 +123,6 @@ pub fn main() !void {
 
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
-        var time = @floatCast(f32, c.glfwGetTime());
-        // var green = (std.math.sin(time / 3) / 2.0) + 0.5;
-        // try shaderProgram.setUniform([3]f32, "ourColour", [3]f32{ 0.0, green, 0.0 });
-        // var ourColourLoc = c.glGetUniformLocation(shaderProgram, "ourColour");
-        // var timeLoc = try shaderProgram.getUniform("glfwTime");
-        // c.glUniform4f(ourColourLoc, 0.0, green, 0.0, 1.0);
-        try shaderProgram.setUniform(f32, "glfwTime", time);
 
         // Rendering
         c.glClear(c.GL_COLOR_BUFFER_BIT);
