@@ -7,33 +7,25 @@ const std = @import("std");
 usingnamespace @import("utilgl.zig");
 usingnamespace @import("shader.zig");
 
-// const Image = struct {
-//     width: i32,
-//     height: i32,
-//     nrChannels: i32,
-//     data: *u8,
-// };
-
 pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
 
     // zig fmt: off
     const vertices = [_]f32{
-        1.0, 1.0, 0.0, 0.9, 0.0, 0.0, 0.0, 0.0, // top right
+        0.0, 1.0, 0.0, 0.9, 0.0, 0.0, 0.5, 0.0, // top middle
         1.0, -1.0, 0.0, 0.0, 0.9, 0.0, 0.0, 1.0, // bottom right
         -1.0, -1.0, 0.0, 0.0, 0.0, 0.9, 1.0, 1.0, // bottom left
-        -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, 1.0, 0.0, // top left
     };
     const indices = [_]u32{
-        0, 1, 3, // first triangle
-        1, 2, 3, // second triangle
+        0, 1, 2, // first triangle
+        // 1, 2, 3, // second triangle
         // 1, 2, 4, // third triangle
     };
-    const textureCoords = [_]f32{
-        0.0, 0.0, // lower-left
-        1.0, 0.0, // lower-right
-        0.5, 1.0, // top-center
-    };
+    // const textureCoords = [_]f32{
+    //     0.0, 0.0, // lower-left
+    //     1.0, 0.0, // lower-right
+    //     0.5, 1.0, // top-center
+    // };
     // zig fmt: on
 
     // Setup.
