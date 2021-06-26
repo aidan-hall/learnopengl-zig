@@ -224,7 +224,7 @@ pub fn main() !void {
     c.glBufferData(c.GL_ELEMENT_ARRAY_BUFFER, @sizeOf(@TypeOf(indices)), &indices, c.GL_STATIC_DRAW);
 
     // vertex attributes
-    vertexAttribConfig(&[_]c.GLint{ 3, 3, 2 });
+    vertexAttribConfig(&.{ 3, 3, 2 });
     // // position
 
     // cube stuff
@@ -238,7 +238,7 @@ pub fn main() !void {
     c.glBindBuffer(c.GL_ARRAY_BUFFER, cubeVbo);
     c.glBufferData(c.GL_ARRAY_BUFFER, @sizeOf(@TypeOf(cubeVertices)), &cubeVertices, c.GL_STATIC_DRAW);
 
-    vertexAttribConfig(&[_]c.GLint{ 3, 2 });
+    vertexAttribConfig(&.{ 3, 2 });
 
     // preparation
     c.glClearColor(0.2, 0.3, 0.3, 1.0);
