@@ -97,6 +97,16 @@ pub const Shader = struct {
         }
         return Shader{ .id = id };
     }
+
+    pub fn createBasic(vertexSource: []const u8, fragmentSource: []const u8) !Shader {
+        var shaders: [2]c.GLuint = undefined;
+        try initStrings(&[_]Source{
+            .{ .shaderType = c.GL_VERTEX_SHADER, .code = vertexSource },
+            .{ .shaderType = c.GL_FRAGMENT_SHADER, .code = fragmentSource },
+        }, &shaders);
+        return try makeProgram(&shaders);
+    }
+
     pub inline fn use(self: Shader) void {
         c.glUseProgram(self.id);
     }

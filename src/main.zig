@@ -11,151 +11,151 @@ const mat = @import("matmaths.zig");
 
 const Shader = sha.Shader;
 
+fn vertexAttribConfig(format: []const c.GLint) void {
+    var nAttributes: c.GLint = 0;
+    for (format) |count| {
+        nAttributes += count;
+    }
+
+    var position: c.GLuint = 0;
+    for (format) |count, loc| {
+        defer position += @intCast(c.GLuint, count);
+
+        c.glVertexAttribPointer(@intCast(c.GLuint, loc), count, try ut.glTypeID(f32), ut.glBool(false), nAttributes * @sizeOf(f32), @intToPtr(?*const c_void, position * @sizeOf(f32)));
+        c.glEnableVertexAttribArray(@intCast(c.GLuint, loc));
+    }
+}
 fn rotateMatrixZ(angle: f32) mat.mat(4) {
-    // zig fmt: off
-    return mat.mat(4) {
+    return mat.mat(4){
         m.cos(angle), -m.sin(angle), 0, 0,
-        m.sin(angle), m.cos(angle), 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1,
+        m.sin(angle), m.cos(angle),  0, 0,
+        0,            0,             1, 0,
+        0,            0,             0, 1,
     };
-    // zig fmt: on
 }
 
 fn rotateMatrixX(angle: f32) mat.mat(4) {
-    // zig fmt: off
-    return mat.mat(4) {
-        1, 0, 0, 0,
+    return mat.mat(4){
+        1, 0,            0,             0,
         0, m.cos(angle), -m.sin(angle), 0,
-        0, m.sin(angle), m.cos(angle), 0,
-        0, 0, 0, 1,
+        0, m.sin(angle), m.cos(angle),  0,
+        0, 0,            0,             1,
     };
-    // zig fmt: on
 }
 
 fn rotateMatrixY(angle: f32) mat.mat(4) {
-    // zig fmt: off
-    return mat.mat(4) {
-        m.cos(angle), 0, m.sin(angle), 0,
-        0, 1, 0, 0,
+    return mat.mat(4){
+        m.cos(angle),  0, m.sin(angle), 0,
+        0,             1, 0,            0,
         -m.sin(angle), 0, m.cos(angle), 0,
-        0, 0, 0, 1,
+        0,             0, 0,            1,
     };
-    // zig fmt: on
 }
 
 fn translateMatrix(motion: mat.vec(3)) mat.mat(4) {
-    // zig fmt: off
     return mat.mat(4){
         1, 0, 0, motion[0],
         0, 1, 0, motion[1],
         0, 0, 1, motion[2],
-        0, 0, 0, 1
+        0, 0, 0, 1,
     };
 }
 
 inline fn scaleMatrix(scale: mat.vec(3)) mat.mat(4) {
     return mat.mat(4){
-        scale[0], 0,     0,     0,
-        0,     scale[1], 0,     0,
-        0,     0,     scale[2], 0,
-        0,     0,     0,     1,
+        scale[0], 0,        0,        0,
+        0,        scale[1], 0,        0,
+        0,        0,        scale[2], 0,
+        0,        0,        0,        1,
     };
 }
 
 inline fn singleScaleMatrix(scale: f32) mat.mat(4) {
-    return scaleMatrix(.{scale, scale, scale});
+    return scaleMatrix(.{ scale, scale, scale });
 }
 
 fn simpleOrthographicProjection(centre: mat.vec(3), scale: mat.vec(3)) mat.mat(4) {
     var scaledCentre = centre / scale;
     return .{
-        1.0/scale[0], 0, 0, -scaledCentre[0],
-        0, 1.0/scale[1], 0, -scaledCentre[1],
-        0, 0, -1.0/scale[2], scaledCentre[2],
-        0, 0, 0, 1.0,
+        1.0 / scale[0], 0,              0,               -scaledCentre[0],
+        0,              1.0 / scale[1], 0,               -scaledCentre[1],
+        0,              0,              -1.0 / scale[2], scaledCentre[2],
+        0,              0,              0,               1.0,
     };
 }
 
 fn perspectiveProjection(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) mat.mat(4) {
     return .{
-        2*n/(r-l), 0, (r+l) / (r-l), 0,
-        0, 2*n/(t-b), (b+t) / (t-b), 0,
-        0, 0, - (f + n)/ (f - n), -2 * f * n / (f - n),
-        0, 0, -1, 0,
+        2 * n / (r - l), 0,               (r + l) / (r - l),  0,
+        0,               2 * n / (t - b), (b + t) / (t - b),  0,
+        0,               0,               -(f + n) / (f - n), -2 * f * n / (f - n),
+        0,               0,               -1,                 0,
     };
 }
 
 pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
 
-    // zig fmt: off
-    const scale_factor = 2.0;
-    const front = 0.5 / scale_factor;
-    const back = 1.0 - 0.5 / scale_factor;
     const vertices = [_]f32{
-        1.0, 1.0, 0.0, 0.9, 0.0, 0.0, back, back, // top right
-        1.0, -1.0, 0.0, 0.0, 0.9, 0.0, back, front, // bottom right
-        -1.0, -1.0, 0.0, 0.0, 0.0, 0.9, front, front, // bottom left
-        -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, front, back, // top left
-        // 0.0, -1.0, 0.0, 0.0, 0.9, 0.9, // bottom middle
+        1.0, 1.0, 0.0, 0.9, 0.0, 0.0, 2.0, 2.0, // top right
+        1.0, -1.0, 0.0, 0.0, 0.9, 0.0, 2.0, -1.0, // bottom right
+        -1.0, -1.0, 0.0, 0.0, 0.0, 0.9, -1.0, -1.0, // bottom left
+        -1.0, 1.0, 0.0, 0.9, 0.9, 0.0, -1.0, 2.0, // top left
     };
 
-    const cubeVertices = [_]f32 {
-    -0.5, -0.5, -0.5,  0.0, 0.0,
-     0.5, -0.5, -0.5,  1.0, 0.0,
-     0.5,  0.5, -0.5,  1.0, 1.0,
-     0.5,  0.5, -0.5,  1.0, 1.0,
-    -0.5,  0.5, -0.5,  0.0, 1.0,
-    -0.5, -0.5, -0.5,  0.0, 0.0,
+    const cubeVertices = [_]f32{
+        -0.5, -0.5, -0.5, 0.0, 0.0,
+        0.5,  -0.5, -0.5, 1.0, 0.0,
+        0.5,  0.5,  -0.5, 1.0, 1.0,
+        0.5,  0.5,  -0.5, 1.0, 1.0,
+        -0.5, 0.5,  -0.5, 0.0, 1.0,
+        -0.5, -0.5, -0.5, 0.0, 0.0,
 
-    -0.5, -0.5,  0.5,  0.0, 0.0,
-     0.5, -0.5,  0.5,  1.0, 0.0,
-     0.5,  0.5,  0.5,  1.0, 1.0,
-     0.5,  0.5,  0.5,  1.0, 1.0,
-    -0.5,  0.5,  0.5,  0.0, 1.0,
-    -0.5, -0.5,  0.5,  0.0, 0.0,
+        -0.5, -0.5, 0.5,  0.0, 0.0,
+        0.5,  -0.5, 0.5,  1.0, 0.0,
+        0.5,  0.5,  0.5,  1.0, 1.0,
+        0.5,  0.5,  0.5,  1.0, 1.0,
+        -0.5, 0.5,  0.5,  0.0, 1.0,
+        -0.5, -0.5, 0.5,  0.0, 0.0,
 
-    -0.5,  0.5,  0.5,  1.0, 0.0,
-    -0.5,  0.5, -0.5,  1.0, 1.0,
-    -0.5, -0.5, -0.5,  0.0, 1.0,
-    -0.5, -0.5, -0.5,  0.0, 1.0,
-    -0.5, -0.5,  0.5,  0.0, 0.0,
-    -0.5,  0.5,  0.5,  1.0, 0.0,
+        -0.5, 0.5,  0.5,  1.0, 0.0,
+        -0.5, 0.5,  -0.5, 1.0, 1.0,
+        -0.5, -0.5, -0.5, 0.0, 1.0,
+        -0.5, -0.5, -0.5, 0.0, 1.0,
+        -0.5, -0.5, 0.5,  0.0, 0.0,
+        -0.5, 0.5,  0.5,  1.0, 0.0,
 
-     0.5,  0.5,  0.5,  1.0, 0.0,
-     0.5,  0.5, -0.5,  1.0, 1.0,
-     0.5, -0.5, -0.5,  0.0, 1.0,
-     0.5, -0.5, -0.5,  0.0, 1.0,
-     0.5, -0.5,  0.5,  0.0, 0.0,
-     0.5,  0.5,  0.5,  1.0, 0.0,
+        0.5,  0.5,  0.5,  1.0, 0.0,
+        0.5,  0.5,  -0.5, 1.0, 1.0,
+        0.5,  -0.5, -0.5, 0.0, 1.0,
+        0.5,  -0.5, -0.5, 0.0, 1.0,
+        0.5,  -0.5, 0.5,  0.0, 0.0,
+        0.5,  0.5,  0.5,  1.0, 0.0,
 
-    -0.5, -0.5, -0.5,  0.0, 1.0,
-     0.5, -0.5, -0.5,  1.0, 1.0,
-     0.5, -0.5,  0.5,  1.0, 0.0,
-     0.5, -0.5,  0.5,  1.0, 0.0,
-    -0.5, -0.5,  0.5,  0.0, 0.0,
-    -0.5, -0.5, -0.5,  0.0, 1.0,
+        -0.5, -0.5, -0.5, 0.0, 1.0,
+        0.5,  -0.5, -0.5, 1.0, 1.0,
+        0.5,  -0.5, 0.5,  1.0, 0.0,
+        0.5,  -0.5, 0.5,  1.0, 0.0,
+        -0.5, -0.5, 0.5,  0.0, 0.0,
+        -0.5, -0.5, -0.5, 0.0, 1.0,
 
-    -0.5,  0.5, -0.5,  0.0, 1.0,
-     0.5,  0.5, -0.5,  1.0, 1.0,
-     0.5,  0.5,  0.5,  1.0, 0.0,
-     0.5,  0.5,  0.5,  1.0, 0.0,
-    -0.5,  0.5,  0.5,  0.0, 0.0,
-    -0.5,  0.5, -0.5,  0.0, 1.0,
+        -0.5, 0.5,  -0.5, 0.0, 1.0,
+        0.5,  0.5,  -0.5, 1.0, 1.0,
+        0.5,  0.5,  0.5,  1.0, 0.0,
+        0.5,  0.5,  0.5,  1.0, 0.0,
+        -0.5, 0.5,  0.5,  0.0, 0.0,
+        -0.5, 0.5,  -0.5, 0.0, 1.0,
     };
 
     const indices = [_]u32{
         0, 1, 3, // first triangle
         1, 2, 3, // second triangle
-        // 1, 2, 4, // third triangle
     };
     const textureCoords = [_]f32{
         0.0, 0.0, // lower-left
         1.0, 0.0, // lower-right
         0.5, 1.0, // top-center
     };
-    // zig fmt: on
 
     // Setup.
     var win = c.setup(200, 200, "Nice GLFW", null, null) orelse return error.SiglInit;
@@ -167,37 +167,24 @@ pub fn main() !void {
         std.log.info("Max attrs: {}", .{nAttrs});
     }
 
-    var squareShader = shadProcBlk: {
-        var shaderSources = [_]Shader.Source{
-            .{
-                .shaderType = c.GL_VERTEX_SHADER,
-                .code = @embedFile("vertex.glsl"),
-            },
-            .{
-                .shaderType = c.GL_FRAGMENT_SHADER,
-                .code = @embedFile("fragment.glsl"),
-            },
-        };
-        var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-        break :shadProcBlk try Shader.makeProgramStrings(&shaderSources, &gpa.allocator);
-    };
-    squareShader.use();
+    // This is the way to use the fully generic method.
+    // var squareShader = shadProcBlk: {
+    //     var shaderSources = [_]Shader.Source{
+    //         .{
+    //             .shaderType = c.GL_VERTEX_SHADER,
+    //             .code = @embedFile("vertex.glsl"),
+    //         },
+    //         .{
+    //             .shaderType = c.GL_FRAGMENT_SHADER,
+    //             .code = @embedFile("fragment.glsl"),
+    //         },
+    //     };
+    //     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    //     break :shadProcBlk try Shader.makeProgramStrings(&shaderSources, &gpa.allocator);
+    // };
 
-    // Cube shader.
-    var cubeShader = cubeShaderBlk: {
-        var shaderSources = [_]Shader.Source{
-            .{
-                .shaderType = c.GL_VERTEX_SHADER,
-                .code = @embedFile("cubeVertex.glsl"),
-            },
-            .{
-                .shaderType = c.GL_FRAGMENT_SHADER,
-                .code = @embedFile("cubeFragment.glsl"),
-            },
-        };
-        var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-        break :cubeShaderBlk try Shader.makeProgramStrings(&shaderSources, &gpa.allocator);
-    };
+    var squareShader = try Shader.createBasic(@embedFile("vertex.glsl"), @embedFile("fragment.glsl"));
+    var cubeShader = try Shader.createBasic(@embedFile("cubeVertex.glsl"), @embedFile("cubeFragment.glsl"));
 
     // texture rendering parameters:
     {
@@ -237,14 +224,8 @@ pub fn main() !void {
     c.glBufferData(c.GL_ELEMENT_ARRAY_BUFFER, @sizeOf(@TypeOf(indices)), &indices, c.GL_STATIC_DRAW);
 
     // vertex attributes
-    // position
-    c.glVertexAttribPointer(0, 3, try ut.glTypeID(f32), ut.glBool(false), 8 * @sizeOf(f32), null);
-    c.glEnableVertexAttribArray(0);
-    // colour
-    c.glVertexAttribPointer(1, 3, try ut.glTypeID(f32), ut.glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 3 * @sizeOf(f32)));
-    c.glEnableVertexAttribArray(1);
-    c.glVertexAttribPointer(2, 2, try ut.glTypeID(f32), ut.glBool(false), 8 * @sizeOf(f32), @intToPtr(*const c_void, 6 * @sizeOf(f32)));
-    c.glEnableVertexAttribArray(2);
+    vertexAttribConfig(&[_]c.GLint{ 3, 3, 2 });
+    // // position
 
     // cube stuff
     var cubeVao: c.GLuint = undefined;
@@ -257,10 +238,7 @@ pub fn main() !void {
     c.glBindBuffer(c.GL_ARRAY_BUFFER, cubeVbo);
     c.glBufferData(c.GL_ARRAY_BUFFER, @sizeOf(@TypeOf(cubeVertices)), &cubeVertices, c.GL_STATIC_DRAW);
 
-    c.glVertexAttribPointer(0, 3, try ut.glTypeID(f32), ut.glBool(false), 5 * @sizeOf(f32), null);
-    c.glEnableVertexAttribArray(0);
-    c.glVertexAttribPointer(1, 2, try ut.glTypeID(f32), ut.glBool(false), 5 * @sizeOf(f32), @intToPtr(*const c_void, 3 * @sizeOf(f32)));
-    c.glEnableVertexAttribArray(1);
+    vertexAttribConfig(&[_]c.GLint{ 3, 2 });
 
     // preparation
     c.glClearColor(0.2, 0.3, 0.3, 1.0);
@@ -287,11 +265,6 @@ pub fn main() !void {
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
-
-        // c.glGetFloatv(c.GL_VIEWPORT, &viewportSize);
-        // camScales[0] = viewportSize[2] / (1000.0);
-        // camScales[1] = viewportSize[3] / (1000.0);
-        // std.log.info("Viewport size: {} {}.", .{ camScales[0], camScales[1] });
 
         // input
         var coordsChanged = false;
