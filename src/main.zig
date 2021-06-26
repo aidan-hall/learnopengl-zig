@@ -296,27 +296,27 @@ pub fn main() !void {
         // input
         var coordsChanged = false;
         if (c.glfwGetKey(win, c.GLFW_KEY_A) == c.GLFW_PRESS) {
-            eyeCoords[0] -= 0.05;
-            coordsChanged = true;
-        }
-        if (c.glfwGetKey(win, c.GLFW_KEY_D) == c.GLFW_PRESS) {
             eyeCoords[0] += 0.05;
             coordsChanged = true;
         }
-        if (c.glfwGetKey(win, c.GLFW_KEY_F) == c.GLFW_PRESS) {
-            eyeCoords[1] -= 0.05;
+        if (c.glfwGetKey(win, c.GLFW_KEY_D) == c.GLFW_PRESS) {
+            eyeCoords[0] -= 0.05;
             coordsChanged = true;
         }
-        if (c.glfwGetKey(win, c.GLFW_KEY_R) == c.GLFW_PRESS) {
+        if (c.glfwGetKey(win, c.GLFW_KEY_F) == c.GLFW_PRESS) {
             eyeCoords[1] += 0.05;
             coordsChanged = true;
         }
+        if (c.glfwGetKey(win, c.GLFW_KEY_R) == c.GLFW_PRESS) {
+            eyeCoords[1] -= 0.05;
+            coordsChanged = true;
+        }
         if (c.glfwGetKey(win, c.GLFW_KEY_W) == c.GLFW_PRESS) {
-            eyeCoords[2] -= 0.05;
+            eyeCoords[2] += 0.05;
             coordsChanged = true;
         }
         if (c.glfwGetKey(win, c.GLFW_KEY_S) == c.GLFW_PRESS) {
-            eyeCoords[2] += 0.05;
+            eyeCoords[2] -= 0.05;
             coordsChanged = true;
         }
         if (coordsChanged) {
@@ -378,7 +378,7 @@ pub fn main() !void {
 
         // view culling
         const viewMatrix = mat.matProd(&.{
-            translateMatrix(-eyeCoords),
+            translateMatrix(eyeCoords),
             rotateMatrixX(cameraRotation[1]),
             rotateMatrixY(cameraRotation[0]),
         });
