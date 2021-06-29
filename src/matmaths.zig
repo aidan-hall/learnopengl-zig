@@ -55,10 +55,13 @@ pub inline fn matProd(matrices: []const mat(4)) mat(4) {
     return product;
 }
 
-pub inline fn newMatProd(matrices: []const mat(4)) mat(4) {
-    std.debug.assert(matrices.len >= 1);
-    var product = matrices[0];
-    for (matrices) |next| {}
+pub inline fn cross(a: vec(3), b: vec(3)) vec(3) {
+    var prod: vec(3) = undefined;
 
-    return product;
+    var i: usize = 0;
+    inline while (i < a.len) : (i += 1) {
+        prod[i] = a[(i + 1) % 3] * b[(i + 2) % 3] - a[(i + 2) % 3] * b[(i + 1) % 3];
+    }
+
+    return prod;
 }
