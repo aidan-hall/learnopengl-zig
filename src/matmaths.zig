@@ -3,14 +3,14 @@ const std = @import("std");
 const ElemT = f32;
 
 pub fn vec(len: usize) type {
-    return [len]ElemT;
+    return std.meta.Vector(len, ElemT);
 }
 
 // pub const vec4 = vec(4);
 // pub const vec3 = vec(3);
 
 pub fn mat(sideLen: usize) type {
-    return [sideLen][sideLen]ElemT;
+    return std.meta.Vector(sideLen * sideLen, ElemT);
 }
 
 // pub const mat4 = mat(4);
@@ -36,7 +36,7 @@ pub inline fn matProd(matrices: []const mat(4)) mat(4) {
         index -= 1;
         product = new_prod_blk: {
             const next = matrices[index];
-            var new_product: mat(4) = undefined;
+            var new_product = mat(4){};
 
             var next_col: usize = 0;
             while (next_col < 4) : (next_col += 1) {
@@ -44,7 +44,7 @@ pub inline fn matProd(matrices: []const mat(4)) mat(4) {
                 while (product_row < 4) : (product_row += 1) {
                     var current_item: usize = 0;
                     while (current_item < 4) : (current_item += 1) {
-                        new_product[product_row][next_col] += next[current_item][next_col] * product[product_row][current_item];
+                        new_product[mat4Coord(next_col, product_row)] += next[mat4Coord(next_col, current_item)] * product[mat4Coord(current_item, product_row)];
                     }
                 }
             }
