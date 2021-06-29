@@ -93,6 +93,24 @@ fn perspectiveProjection(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) mat.mat
     };
 }
 
+fn coordSystem(A: mat.vec(3), B: mat.vec(3), C: mat.vec(3)) mat.mat(4) {
+    return .{
+        A[0], A[1], A[2], 0,
+        B[0], B[1], B[2], 0,
+        C[0], C[1], C[2], 0,
+        0,    0,    0,    1,
+    };
+}
+fn lookAt(pos: mat.vec(3), target: mat.vec(3), up: mat.vec(3)) mat.mat(4) {
+    const camDir = mat.norm(pos - target);
+    const camRight = mat.norm(mat.cross(up, camDir));
+
+    return mat.matProd(&.{
+        translateMatrix(-pos),
+        coordSystem(camRight, up, camDir),
+    });
+}
+
 pub fn main() !void {
     std.log.info("All your codebase are belong to us.", .{});
 
@@ -254,10 +272,9 @@ pub fn main() !void {
 
     var wave_speed: f32 = 1.0;
     var faceOpacity: f32 = 0.5;
-    var cameraRotation = [2]f32{ 0.0, 0.0 };
 
     // projection
-    var eyeCoords = mat.vec(3){ 0.0, 0.0, -3.0 };
+    var eyeCoords = mat.vec(3){ 0.0, 0.0, 3.0 };
     // var camScales = mat.vec(3){ 1.0, 1.0, 100.0 };
     var viewportSize: [4]f32 = undefined;
     var orthographic = false;
@@ -307,18 +324,6 @@ pub fn main() !void {
         if (c.glfwGetKey(win, c.GLFW_KEY_DOWN) == c.GLFW_PRESS) {
             wave_speed -= 0.1;
         }
-        if (c.glfwGetKey(win, c.GLFW_KEY_E) == c.GLFW_PRESS) {
-            cameraRotation[0] += 0.05;
-        }
-        if (c.glfwGetKey(win, c.GLFW_KEY_Q) == c.GLFW_PRESS) {
-            cameraRotation[0] -= 0.05;
-        }
-        if (c.glfwGetKey(win, c.GLFW_KEY_C) == c.GLFW_PRESS) {
-            cameraRotation[1] += 0.05;
-        }
-        if (c.glfwGetKey(win, c.GLFW_KEY_Z) == c.GLFW_PRESS) {
-            cameraRotation[1] -= 0.05;
-        }
 
         if (c.glfwGetKey(win, c.GLFW_KEY_M) == c.GLFW_PRESS) {
             orthographic = true;
@@ -349,12 +354,11 @@ pub fn main() !void {
         cubeShader.use();
         try cubeShader.setUniform(*const mat.mat(4), "projection", &projectionShape);
 
-        // view culling
-        const viewMatrix = mat.matProd(&.{
-            translateMatrix(eyeCoords),
-            rotateMatrixX(cameraRotation[1]),
-            rotateMatrixY(cameraRotation[0]),
-        });
+        // view culling/camera
+        const radius = 10.0;
+        var camCoords = mat.vec(3){ radius * std.math.sin(time), 0.0, radius * std.math.cos(time) };
+        var viewMatrix = lookAt(camCoords, .{ 0, 0, 0 }, .{ 0, 1, 0 });
+
         squareShader.use();
         try squareShader.setUniform(*const mat.mat(4), "view", &viewMatrix);
         cubeShader.use();
