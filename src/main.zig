@@ -27,46 +27,45 @@ fn vertexAttribConfig(format: []const c.GLint) void {
 }
 fn rotateMatrixZ(angle: f32) mat.mat(4) {
     return mat.mat(4){
-        m.cos(angle), -m.sin(angle), 0, 0,
-        m.sin(angle), m.cos(angle),  0, 0,
-        0,            0,             1, 0,
-        0,            0,             0, 1,
+        .{ m.cos(angle), -m.sin(angle), 0, 0 },
+        .{ m.sin(angle), m.cos(angle), 0, 0 },
+        .{ 0, 0, 1, 0 },
+        .{ 0, 0, 0, 1 },
     };
 }
 
 fn rotateMatrixX(angle: f32) mat.mat(4) {
     return mat.mat(4){
-        1, 0,            0,             0,
-        0, m.cos(angle), -m.sin(angle), 0,
-        0, m.sin(angle), m.cos(angle),  0,
-        0, 0,            0,             1,
+        .{ 1, 0, 0, 0 },
+        .{ 0, m.cos(angle), -m.sin(angle), 0 },
+        .{ 0, m.sin(angle), m.cos(angle), 0 },
+        .{ 0, 0, 0, 1 },
     };
 }
 
 fn rotateMatrixY(angle: f32) mat.mat(4) {
     return mat.mat(4){
-        m.cos(angle),  0, m.sin(angle), 0,
-        0,             1, 0,            0,
-        -m.sin(angle), 0, m.cos(angle), 0,
-        0,             0, 0,            1,
+        .{ m.cos(angle), 0, m.sin(angle), 0 },
+        .{ 0, 1, 0, 0 },
+        .{ -m.sin(angle), 0, m.cos(angle), 0 },
+        .{ 0, 0, 0, 1 },
     };
 }
-
 fn translateMatrix(motion: mat.vec(3)) mat.mat(4) {
     return mat.mat(4){
-        1, 0, 0, motion[0],
-        0, 1, 0, motion[1],
-        0, 0, 1, motion[2],
-        0, 0, 0, 1,
+        .{ 1, 0, 0, motion[0] },
+        .{ 0, 1, 0, motion[1] },
+        .{ 0, 0, 1, motion[2] },
+        .{ 0, 0, 0, 1 },
     };
 }
 
 inline fn scaleMatrix(scale: mat.vec(3)) mat.mat(4) {
     return mat.mat(4){
-        scale[0], 0,        0,        0,
-        0,        scale[1], 0,        0,
-        0,        0,        scale[2], 0,
-        0,        0,        0,        1,
+        .{ scale[0], 0, 0, 0 },
+        .{ 0, scale[1], 0, 0 },
+        .{ 0, 0, scale[2], 0 },
+        .{ 0, 0, 0, 1 },
     };
 }
 
@@ -75,21 +74,20 @@ inline fn singleScaleMatrix(scale: f32) mat.mat(4) {
 }
 
 fn simpleOrthographicProjection(centre: mat.vec(3), scale: mat.vec(3)) mat.mat(4) {
-    var scaledCentre = centre / scale;
     return .{
-        1.0 / scale[0], 0,              0,               -scaledCentre[0],
-        0,              1.0 / scale[1], 0,               -scaledCentre[1],
-        0,              0,              -1.0 / scale[2], scaledCentre[2],
-        0,              0,              0,               1.0,
+        .{ 1.0 / scale[0], 0, 0, -centre[0] / scale[0] },
+        .{ 0, 1.0 / scale[1], 0, -centre[1] / scale[1] },
+        .{ 0, 0, -1.0 / scale[2], centre[2] / scale[2] },
+        .{ 0, 0, 0, 1.0 },
     };
 }
 
 fn perspectiveProjection(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) mat.mat(4) {
     return .{
-        2 * n / (r - l), 0,               (r + l) / (r - l),  0,
-        0,               2 * n / (t - b), (b + t) / (t - b),  0,
-        0,               0,               -(f + n) / (f - n), -2 * f * n / (f - n),
-        0,               0,               -1,                 0,
+        .{ 2 * n / (r - l), 0, (r + l) / (r - l), 0 },
+        .{ 0, 2 * n / (t - b), (b + t) / (t - b), 0 },
+        .{ 0, 0, -(f + n) / (f - n), -2 * f * n / (f - n) },
+        .{ 0, 0, -1, 0 },
     };
 }
 
