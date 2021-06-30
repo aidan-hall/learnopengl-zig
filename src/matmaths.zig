@@ -6,9 +6,13 @@ pub fn vec(len: usize) type {
     return std.meta.Vector(len, ElemT);
 }
 
-pub fn magSquared(x: vec(3)) f32 {
-    const prod = x * x;
+pub inline fn dot(a: vec(3), b: vec(3)) f32 {
+    const prod = a * b;
     return prod[0] + prod[1] + prod[2];
+}
+
+pub fn magSquared(x: vec(3)) f32 {
+    return dot(x, x);
 }
 
 pub fn norm(x: vec(3)) vec(3) {
