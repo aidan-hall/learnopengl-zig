@@ -42,6 +42,13 @@ pub const Camera = struct {
     pub fn move(self: *Camera, direction: mat.vec(3), dist: f32) void {
         self.pos += mat.vecScaled(direction, dist);
     }
+
+    pub fn lookEuler(self: *Camera, pitch: f32, yaw: f32) void {
+        self.front[0] = std.math.cos(yaw) * std.math.cos(pitch);
+        self.front[1] = std.math.sin(pitch);
+        self.front[2] = std.math.sin(yaw) * std.math.cos(pitch);
+        self.updateBases();
+    }
 };
 
 pub fn NiceCamera(pos: mat.vec(3), front: mat.vec(3)) Camera {

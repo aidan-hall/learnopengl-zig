@@ -12,6 +12,9 @@ const cam = @import("camera.zig");
 
 const Shader = sha.Shader;
 
+var mousex: f32 = 0.0;
+var mousey: f32 = 0.0;
+
 fn vertexAttribConfig(format: []const c.GLint) void {
     var nAttributes: c.GLint = 0;
     for (format) |count| {
@@ -136,6 +139,7 @@ pub fn main() !void {
     // Setup.
     var win = c.setup(200, 200, "Nice GLFW", null, null) orelse return error.SiglInit;
     defer c.cleanup(win);
+    c.glfwSetInputMode(win, c.GLFW_CURSOR, c.GLFW_CURSOR_DISABLED);
 
     {
         var nAttrs: c_int = undefined;
@@ -249,6 +253,9 @@ pub fn main() !void {
     var prevTime: f32 = 0.0;
     var delta: f32 = 0.0;
 
+    var pitch: f32 = 0.0;
+    var yaw: f32 = -std.math.pi / 2.0;
+
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
@@ -285,6 +292,19 @@ pub fn main() !void {
         if (coordsChanged) {
             std.log.info("Eye coords: {} {} {}", .{ camera.pos[0], camera.pos[1], camera.pos[2] });
         }
+        if (c.glfwGetKey(win, c.GLFW_KEY_E) == c.GLFW_PRESS) {
+            yaw -= 2 * delta;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_Q) == c.GLFW_PRESS) {
+            yaw += 2 * delta;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_C) == c.GLFW_PRESS) {
+            pitch -= 2 * delta;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_Z) == c.GLFW_PRESS) {
+            pitch += 2 * delta;
+        }
+        camera.lookEuler(pitch, yaw);
         if (c.glfwGetKey(win, c.GLFW_KEY_LEFT) == c.GLFW_PRESS) {
             faceOpacity += 0.05;
         }
@@ -446,3 +466,8 @@ fn wobbleAbout(centre: f32, mag: f32, pos: f32) f32 {
 //         }
 //     }
 // }
+
+pub export fn mouseCallback(win: ?*c.GLFWwindow, x: f32, y: f32) void {
+    mousex = x;
+    mousey = y;
+}
