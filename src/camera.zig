@@ -47,6 +47,7 @@ pub const Camera = struct {
         self.front[0] = std.math.cos(yaw) * std.math.cos(pitch);
         self.front[1] = std.math.sin(pitch);
         self.front[2] = std.math.sin(yaw) * std.math.cos(pitch);
+        self.front = mat.norm(self.front);
         self.updateBases();
     }
 };
