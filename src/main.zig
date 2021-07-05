@@ -12,8 +12,8 @@ const cam = @import("camera.zig");
 
 const Shader = sha.Shader;
 
-var mousex: f32 = 0.0;
-var mousey: f32 = 0.0;
+var mousex: f64 = 0.0;
+var mousey: f64 = 0.0;
 
 fn vertexAttribConfig(format: []const c.GLint) void {
     var nAttributes: c.GLint = 0;
@@ -140,6 +140,7 @@ pub fn main() !void {
     var win = c.setup(200, 200, "Nice GLFW", null, null) orelse return error.SiglInit;
     defer c.cleanup(win);
     c.glfwSetInputMode(win, c.GLFW_CURSOR, c.GLFW_CURSOR_DISABLED);
+    _ = c.glfwSetCursorPosCallback(win, mouseCallback);
 
     {
         var nAttrs: c_int = undefined;
@@ -467,7 +468,7 @@ fn wobbleAbout(centre: f32, mag: f32, pos: f32) f32 {
 //     }
 // }
 
-pub export fn mouseCallback(win: ?*c.GLFWwindow, x: f32, y: f32) void {
+pub export fn mouseCallback(win: ?*c.GLFWwindow, x: f64, y: f64) callconv(.C) void {
     mousex = x;
     mousey = y;
 }
