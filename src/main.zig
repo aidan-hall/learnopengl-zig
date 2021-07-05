@@ -282,19 +282,6 @@ pub fn main() !void {
             camera.move(camera.front, -speed);
             coordsChanged = true;
         }
-        if (c.glfwGetKey(win, c.GLFW_KEY_Q) == c.GLFW_PRESS) {}
-        if (c.glfwGetKey(win, c.GLFW_KEY_E) == c.GLFW_PRESS) {
-            camera.move(camera.front, -speed);
-            coordsChanged = true;
-        }
-        if (c.glfwGetKey(win, c.GLFW_KEY_Z) == c.GLFW_PRESS) {
-            camera.move(camera.front, -speed);
-            coordsChanged = true;
-        }
-        if (c.glfwGetKey(win, c.GLFW_KEY_C) == c.GLFW_PRESS) {
-            camera.move(camera.front, -speed);
-            coordsChanged = true;
-        }
         if (coordsChanged) {
             std.log.info("Eye coords: {} {} {}", .{ camera.pos[0], camera.pos[1], camera.pos[2] });
         }
