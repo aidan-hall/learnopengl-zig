@@ -8,6 +8,7 @@ const m = std.math;
 const ut = @import("utilgl.zig");
 const sha = @import("shader.zig");
 const mat = @import("matmaths.zig");
+const cam = @import("camera.zig");
 
 const Shader = sha.Shader;
 
@@ -25,42 +26,6 @@ fn vertexAttribConfig(format: []const c.GLint) void {
         c.glEnableVertexAttribArray(@intCast(c.GLuint, loc));
     }
 }
-fn rotateMatrixZ(angle: f32) mat.mat(4) {
-    return mat.mat(4){
-        m.cos(angle), -m.sin(angle), 0, 0,
-        m.sin(angle), m.cos(angle),  0, 0,
-        0,            0,             1, 0,
-        0,            0,             0, 1,
-    };
-}
-
-fn rotateMatrixX(angle: f32) mat.mat(4) {
-    return mat.mat(4){
-        1, 0,            0,             0,
-        0, m.cos(angle), -m.sin(angle), 0,
-        0, m.sin(angle), m.cos(angle),  0,
-        0, 0,            0,             1,
-    };
-}
-
-fn rotateMatrixY(angle: f32) mat.mat(4) {
-    return mat.mat(4){
-        m.cos(angle),  0, m.sin(angle), 0,
-        0,             1, 0,            0,
-        -m.sin(angle), 0, m.cos(angle), 0,
-        0,             0, 0,            1,
-    };
-}
-
-fn translateMatrix(motion: mat.vec(3)) mat.mat(4) {
-    return mat.mat(4){
-        1, 0, 0, motion[0],
-        0, 1, 0, motion[1],
-        0, 0, 1, motion[2],
-        0, 0, 0, 1,
-    };
-}
-
 inline fn scaleMatrix(scale: mat.vec(3)) mat.mat(4) {
     return mat.mat(4){
         scale[0], 0,        0,        0,
@@ -93,22 +58,14 @@ fn perspectiveProjection(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) mat.mat
     };
 }
 
-fn coordSystem(A: mat.vec(3), B: mat.vec(3), C: mat.vec(3)) mat.mat(4) {
-    return .{
-        A[0], A[1], A[2], 0,
-        B[0], B[1], B[2], 0,
-        C[0], C[1], C[2], 0,
-        0,    0,    0,    1,
-    };
-}
 fn lookAt(pos: mat.vec(3), target: mat.vec(3), up: mat.vec(3)) mat.mat(4) {
     const camDir = mat.norm(pos - target);
     const camRight = mat.norm(mat.cross(up, camDir));
     const camUp = mat.cross(camDir, camRight);
 
     return mat.matProd(&.{
-        translateMatrix(-pos),
-        coordSystem(camRight, camUp, camDir),
+        mat.translateMatrix(-pos),
+        cam.coordSystem(camRight, camUp, camDir),
     });
 }
 
@@ -274,44 +231,72 @@ pub fn main() !void {
     var wave_speed: f32 = 1.0;
     var faceOpacity: f32 = 0.5;
 
-    // projection
-    var eyeCoords = mat.vec(3){ 0.0, 0.0, 3.0 };
-    // var camScales = mat.vec(3){ 1.0, 1.0, 100.0 };
+    // camera
+    var camera = cam.NiceCamera(.{ 0, 0, 3 }, .{ 0, 0, -1 });
+    // var camera = cam.Camera{
+    //     .pos = .{ 0.0, 0.0, 3.0 },
+    //     .up = .{ 0, 1, 0 },
+    //     .front = .{ 0, 0, -1 },
+    //     .right = undefined,
+    //     .spaceUp = undefined,
+    // };
+    // camera.updateBases();
+    // camera.lookAt(.{ 0, 0, 0 });
+    // camera.updateBases();
+
     var viewportSize: [4]f32 = undefined;
     var orthographic = false;
+    var prevTime: f32 = 0.0;
+    var delta: f32 = 0.0;
 
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         var time = @floatCast(f32, c.glfwGetTime());
+        delta = time - prevTime;
+        prevTime = time;
 
         // input
         var coordsChanged = false;
+        const speed = 2.0 * delta;
         if (c.glfwGetKey(win, c.GLFW_KEY_A) == c.GLFW_PRESS) {
-            eyeCoords[0] -= 0.05;
+            camera.move(camera.right, -speed);
             coordsChanged = true;
         }
         if (c.glfwGetKey(win, c.GLFW_KEY_D) == c.GLFW_PRESS) {
-            eyeCoords[0] += 0.05;
+            camera.move(camera.right, speed);
             coordsChanged = true;
         }
         if (c.glfwGetKey(win, c.GLFW_KEY_F) == c.GLFW_PRESS) {
-            eyeCoords[1] -= 0.05;
+            camera.move(camera.spaceUp, -speed);
             coordsChanged = true;
         }
         if (c.glfwGetKey(win, c.GLFW_KEY_R) == c.GLFW_PRESS) {
-            eyeCoords[1] += 0.05;
+            camera.move(camera.spaceUp, speed);
             coordsChanged = true;
         }
         if (c.glfwGetKey(win, c.GLFW_KEY_W) == c.GLFW_PRESS) {
-            eyeCoords[2] -= 0.05;
+            camera.move(camera.front, speed);
             coordsChanged = true;
         }
         if (c.glfwGetKey(win, c.GLFW_KEY_S) == c.GLFW_PRESS) {
-            eyeCoords[2] += 0.05;
+            camera.move(camera.front, -speed);
+            coordsChanged = true;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_Q) == c.GLFW_PRESS) {}
+        if (c.glfwGetKey(win, c.GLFW_KEY_E) == c.GLFW_PRESS) {
+            camera.move(camera.front, -speed);
+            coordsChanged = true;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_Z) == c.GLFW_PRESS) {
+            camera.move(camera.front, -speed);
+            coordsChanged = true;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_C) == c.GLFW_PRESS) {
+            camera.move(camera.front, -speed);
             coordsChanged = true;
         }
         if (coordsChanged) {
-            std.log.info("Eye coords: {} {} {}", .{ eyeCoords[0], eyeCoords[1], eyeCoords[2] });
+            std.log.info("Eye coords: {} {} {}", .{ camera.pos[0], camera.pos[1], camera.pos[2] });
         }
         if (c.glfwGetKey(win, c.GLFW_KEY_LEFT) == c.GLFW_PRESS) {
             faceOpacity += 0.05;
@@ -356,7 +341,8 @@ pub fn main() !void {
         try cubeShader.setUniform(*const mat.mat(4), "projection", &projectionShape);
 
         // view culling/camera
-        var viewMatrix = lookAt(eyeCoords, .{ 0, 0, 0 }, .{ 0, 1, 0 });
+        var viewMatrix = camera.lookMatrix();
+        // var viewMatrix = lookAt(eyeCoords, .{ 0, 0, 0 }, .{ 0, 1, 0 });
 
         squareShader.use();
         try squareShader.setUniform(*const mat.mat(4), "view", &viewMatrix);
@@ -366,13 +352,13 @@ pub fn main() !void {
         // translated in positive z direction so it will always be in front.
         const squareModelMatrices = [_]mat.mat(4){
             mat.matProd(&[_]mat.mat(4){
-                rotateMatrixX(-2.0 * time),
-                rotateMatrixZ(time),
-                translateMatrix(.{ m.sin(time), m.cos(time), 1.0 }),
+                mat.rotateMatrixX(-2.0 * time),
+                mat.rotateMatrixZ(time),
+                mat.translateMatrix(.{ m.sin(time), m.cos(time), 1.0 }),
             }),
             mat.matProd(&[_]mat.mat(4){
                 singleScaleMatrix(0.8 + m.sin(time) / 5.0),
-                translateMatrix(.{ -0.5, 0.5, m.sin(time) * 2.0 }),
+                mat.translateMatrix(.{ -0.5, 0.5, m.sin(time) * 2.0 }),
             }),
         };
 
@@ -385,16 +371,16 @@ pub fn main() !void {
         cubeShader.use();
 
         const cubeModelTranslations = [_]mat.mat(4){
-            translateMatrix(.{ 0.0, 0.0, 0.0 }),
-            translateMatrix(.{ 2.0, 5.0, -15.0 }),
-            translateMatrix(.{ -1.5, -2.2, -2.5 }),
-            translateMatrix(.{ -3.8, -2.0, -12.3 }),
-            translateMatrix(.{ 2.4, -0.4, -3.5 }),
-            translateMatrix(.{ -1.7, 3.0, -7.5 }),
-            translateMatrix(.{ 1.3, -2.0, -2.5 }),
-            translateMatrix(.{ 1.5, 2.0, -2.5 }),
-            translateMatrix(.{ 1.5, 0.2, -1.5 }),
-            translateMatrix(.{ -1.3, 1.0, -1.5 }),
+            mat.translateMatrix(.{ 0.0, 0.0, 0.0 }),
+            mat.translateMatrix(.{ 2.0, 5.0, -15.0 }),
+            mat.translateMatrix(.{ -1.5, -2.2, -2.5 }),
+            mat.translateMatrix(.{ -3.8, -2.0, -12.3 }),
+            mat.translateMatrix(.{ 2.4, -0.4, -3.5 }),
+            mat.translateMatrix(.{ -1.7, 3.0, -7.5 }),
+            mat.translateMatrix(.{ 1.3, -2.0, -2.5 }),
+            mat.translateMatrix(.{ 1.5, 2.0, -2.5 }),
+            mat.translateMatrix(.{ 1.5, 0.2, -1.5 }),
+            mat.translateMatrix(.{ -1.3, 1.0, -1.5 }),
         };
 
         for (cubeModelTranslations) |transform, idx| {
@@ -409,7 +395,7 @@ pub fn main() !void {
             });
 
             var rotateRate: f32 = if ((idx % 3) == 0) time else @intToFloat(f32, idx);
-            var thisTransform = mat.matProd(&.{ rotateMatrixZ(rotateRate), wobbleTransform, transform });
+            var thisTransform = mat.matProd(&.{ mat.rotateMatrixZ(rotateRate), wobbleTransform, transform });
 
             try cubeShader.setUniform(*const mat.mat(4), "model", &thisTransform);
             c.glDrawArrays(c.GL_TRIANGLES, 0, 36);
@@ -422,11 +408,11 @@ pub fn main() !void {
         // squares
         for (squareModelMatrices) |model| {
             try squareShader.setUniform(*const mat.mat(4), "model", &model);
-            c.glDrawElements(c.GL_TRIANGLES, 6, try ut.glTypeID(@TypeOf(indices[0])), null);
+            c.glDrawElements(c.GL_TRIANGLES, 6, try ut.glTypeID(u32), null);
         }
 
         // First box
-        c.glDrawElements(c.GL_TRIANGLES, 6, try ut.glTypeID(@TypeOf(indices[0])), null);
+        c.glDrawElements(c.GL_TRIANGLES, 6, try ut.glTypeID(u32), null);
         // c.glDrawArrays(c.GL_TRIANGLES, 0, 6);
 
         std.time.sleep(std.time.ns_per_s / 60);
@@ -455,3 +441,21 @@ fn loadFarbfeldImage(name: [:0]const u8, textureUnit: c.GLenum) !c.GLuint {
 fn wobbleAbout(centre: f32, mag: f32, pos: f32) f32 {
     return centre + mag * pos;
 }
+
+// pub export fn keyCallback(window: ?*GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) void {
+//     if (action == c.GLFW_RELEASE) {
+//         switch (key) {
+//             c.GLFW_KEY_ESCAPE => c.glfwSetWindowShouldClose(window, c.GLFW_TRUE),
+
+//             c.GLFW_KEY_O => {
+//                 var polyMode: c_int = undefined;
+//                 c.glGetIntegerv(c.GL_POLYGON_MODE, &polyMode);
+//                 if (polyMode == c.GL_LINE) {
+//                     c.glPolygonMode(c.GL_FRONT_AND_BACK, c.GL_FILL);
+//                 } else {
+//                     c.glPolygonMode(c.GL_FRONT_AND_BACK, c.GL_LINE);
+//                 }
+//             },
+//         }
+//     }
+// }
