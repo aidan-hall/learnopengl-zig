@@ -250,15 +250,21 @@ pub fn main() !void {
     // camera.updateBases();
 
     var viewportSize: [4]f32 = undefined;
+    c.glGetFloatv(c.GL_VIEWPORT, @ptrCast([*c]f32, &viewportSize));
     var orthographic = false;
     var prevTime: f32 = 0.0;
     var delta: f32 = 0.0;
 
     var pitch: f32 = 0.0;
     var yaw: f32 = -std.math.pi / 2.0;
+    var lastX: f32 = viewportSize[2] / 2.0;
+    var lastY: f32 = viewportSize[3] / 2.0;
 
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
+        // viewport
+        c.glGetFloatv(c.GL_VIEWPORT, @ptrCast([*c]f32, &viewportSize));
+        std.log.info("Viewport size: {} {}", .{ viewportSize[2], viewportSize[3] });
         var time = @floatCast(f32, c.glfwGetTime());
         delta = time - prevTime;
         prevTime = time;
@@ -305,6 +311,14 @@ pub fn main() !void {
         if (c.glfwGetKey(win, c.GLFW_KEY_Z) == c.GLFW_PRESS) {
             pitch += 2 * delta;
         }
+        // clamp pitch
+        const cutoff = m.pi / 2.0 - 0.1;
+        if (pitch >= cutoff) {
+            pitch = cutoff;
+        } else if (pitch <= -cutoff) {
+            pitch = -cutoff;
+        }
+
         camera.lookEuler(pitch, yaw);
         if (c.glfwGetKey(win, c.GLFW_KEY_LEFT) == c.GLFW_PRESS) {
             faceOpacity += 0.05;
@@ -325,6 +339,19 @@ pub fn main() !void {
         if (c.glfwGetKey(win, c.GLFW_KEY_N) == c.GLFW_PRESS) {
             orthographic = false;
         }
+
+        // camera direction
+        var xoffset: f32 = -(@floatCast(f32, mousex) - lastX);
+        var yoffset: f32 = lastY - @floatCast(f32, mousey);
+        lastX = @floatCast(f32, mousex);
+        lastY = @floatCast(f32, mousey);
+        const sensitivity = 0.005;
+        xoffset *= sensitivity;
+        yoffset *= sensitivity;
+
+        yaw += xoffset;
+        pitch += yoffset;
+        camera.lookEuler(pitch, yaw);
 
         // transformations
 
