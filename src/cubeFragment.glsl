@@ -2,6 +2,7 @@
 out vec4 FragColor;
 
 in vec2 TexCoord;
+in float illumination;
 
 uniform float faceOpacity;
 
@@ -16,4 +17,5 @@ void main()
 			texture(wallTexture, TexCoord),
 			faceOpacity
 			);
+	FragColor.rgb *= illumination;
 }

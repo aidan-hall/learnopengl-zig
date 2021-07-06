@@ -3,6 +3,7 @@ out vec4 FragColor;
 
 in vec3 vertexColour;
 in vec2 TexCoord;
+in float illumination;
 
 uniform float glfwTime;
 uniform vec3 ourColour;
@@ -32,4 +33,6 @@ void main()
 	FragColor.r *= (cos(glfwTime + 6.123/3) * 0.5f) + 1.0f;
 	FragColor.g *= (cos(glfwTime) * 0.5f) + 1.0f;
 	FragColor.b *= (cos(glfwTime - 6.123/3) * 0.5f) + 1.0f;
+
+	FragColor.rgb *= illumination;
 }

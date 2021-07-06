@@ -226,12 +226,17 @@ pub fn main() !void {
     // c.glBindTexture(c.GL_TEXTURE_2D, wallTexture);
     c.glBindVertexArray(vao);
 
+    // light source
+    const lightPos = mat.vec(3){ 0, 0, 0 };
+
     squareShader.use();
     try squareShader.setUniform(i32, "boxTexture", 0);
     try squareShader.setUniform(i32, "wallTexture", 1);
+    try squareShader.setUniform([3]f32, "lightPos", lightPos);
     cubeShader.use();
     try cubeShader.setUniform(i32, "boxTexture", 0);
     try cubeShader.setUniform(i32, "wallTexture", 1);
+    try cubeShader.setUniform([3]f32, "lightPos", lightPos);
 
     var wave_speed: f32 = 1.0;
     var faceOpacity: f32 = 0.5;
@@ -260,6 +265,8 @@ pub fn main() !void {
     var lastX: f32 = viewportSize[2] / 2.0;
     var lastY: f32 = viewportSize[3] / 2.0;
 
+    var planeLocked: bool = false;
+
     // Main Loop
     while (c.glfwWindowShouldClose(win) != c.GLFW_TRUE) {
         // viewport
@@ -270,6 +277,12 @@ pub fn main() !void {
         prevTime = time;
 
         // input
+        if (c.glfwGetKey(win, c.GLFW_KEY_P) == c.GLFW_PRESS) {
+            planeLocked = true;
+        }
+        if (c.glfwGetKey(win, c.GLFW_KEY_L) == c.GLFW_PRESS) {
+            planeLocked = false;
+        }
         var coordsChanged = false;
         const speed = 2.0 * delta;
         if (c.glfwGetKey(win, c.GLFW_KEY_A) == c.GLFW_PRESS) {
@@ -296,6 +309,8 @@ pub fn main() !void {
             camera.move(camera.front, -speed);
             coordsChanged = true;
         }
+        if (planeLocked)
+            camera.pos[1] = 0;
         if (coordsChanged) {
             std.log.info("Eye coords: {} {} {}", .{ camera.pos[0], camera.pos[1], camera.pos[2] });
         }
