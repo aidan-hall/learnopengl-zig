@@ -29,8 +29,9 @@ void main()
   gl_Position = projection * view * modelCoords;
   TexCoord = vec2(aTexCoord.x, aTexCoord.y);
 
-  float lightSep = distance(modelCoords.xyz, lightPos);
-  illumination = clamp(5.0 / (lightSep * lightSep), 0.0, 2.0);
+  // float lightSep = distance(modelCoords.xyz, lightPos);
+  // illumination = clamp(5.0 / (lightSep * lightSep), 0.0, 2.0);
+  illumination = 0.2;
 
 
 }

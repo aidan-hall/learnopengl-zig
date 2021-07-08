@@ -3,6 +3,7 @@ const m = std.math;
 
 const ElemT = f32;
 
+/// A SIMD vector.
 pub fn vec(len: usize) type {
     return std.meta.Vector(len, ElemT);
 }

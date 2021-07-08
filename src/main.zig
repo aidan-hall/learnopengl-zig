@@ -227,16 +227,16 @@ pub fn main() !void {
     c.glBindVertexArray(vao);
 
     // light source
-    const lightPos = mat.vec(3){ 0, 0, 0 };
+    // const lightPos = mat.vec(3){ 0, 0, 0 };
 
     squareShader.use();
     try squareShader.setUniform(i32, "boxTexture", 0);
     try squareShader.setUniform(i32, "wallTexture", 1);
-    try squareShader.setUniform([3]f32, "lightPos", lightPos);
+    // try squareShader.setUniform([3]f32, "lightPos", lightPos);
     cubeShader.use();
     try cubeShader.setUniform(i32, "boxTexture", 0);
     try cubeShader.setUniform(i32, "wallTexture", 1);
-    try cubeShader.setUniform([3]f32, "lightPos", lightPos);
+    // try cubeShader.setUniform([3]f32, "lightPos", lightPos);
 
     var wave_speed: f32 = 1.0;
     var faceOpacity: f32 = 0.5;
@@ -355,6 +355,19 @@ pub fn main() !void {
             orthographic = false;
         }
 
+        // light colour
+        const rate = time * wave_speed;
+        const lightCol = [3]f32{
+            1.0,
+            0.75,
+            1.0,
+        };
+        // const lightCol = mat.vec(3){
+        //     std.math.sin(rate),
+        //     std.math.sin(rate + std.math.pi * 2.0 / 3.0),
+        //     std.math.sin(rate - std.math.pi * 2.0 / 3.0),
+        // } * mat.vec(3){ 0.5, 0.5, 0.5 } + mat.vec(3){ 0.5, 0.5, 0.5 };
+
         // camera direction
         var xoffset: f32 = -(@floatCast(f32, mousex) - lastX);
         var yoffset: f32 = lastY - @floatCast(f32, mousey);
@@ -376,6 +389,7 @@ pub fn main() !void {
 
         cubeShader.use();
         try cubeShader.setUniform(f32, "faceOpacity", faceOpacity);
+        try cubeShader.setUniform([3]f32, "lightCol", lightCol);
 
         // projection
         const projectionShape = projectionBlock: {

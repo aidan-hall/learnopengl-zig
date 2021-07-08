@@ -25,7 +25,7 @@ void main()
   vertexColour = aColour;
 
   float lightSep = distance(modelCoords.xyz, lightPos);
-  illumination = clamp(5.0 / (lightSep * lightSep), 0.0, 1.0);
+  illumination = clamp(1.0 / (lightSep * lightSep), 0.0, 1.0);
 
   /* const float wobbleFactor = 1.0/20.0; */
   /* gl_Position.x *= (1.0 - wobbleFactor) + sin(glfwTime * aPos.y * 2.0) * wobbleFactor; */
