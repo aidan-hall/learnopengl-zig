@@ -6,11 +6,9 @@ const c = @cImport({
 const std = @import("std");
 const m = std.math;
 const ut = @import("utilgl.zig");
-const sha = @import("shader.zig");
+const Shader = @import("shader.zig").Shader;
 const mat = @import("matmaths.zig");
 const cam = @import("camera.zig");
-
-const Shader = sha.Shader;
 
 var mousex: f64 = 0.0;
 var mousey: f64 = 0.0;
@@ -139,7 +137,7 @@ pub fn main() !void {
     // Setup.
     var win = c.setup(200, 200, "Nice GLFW", null, null) orelse return error.SiglInit;
     defer c.cleanup(win);
-    c.glfwSetInputMode(win, c.GLFW_CURSOR, c.GLFW_CURSOR_DISABLED);
+    c.glfwSetInputMode(win, c.GLFW_CURSOR, c.GLFW_CURSOR_NORMAL);
     _ = c.glfwSetCursorPosCallback(win, mouseCallback);
 
     {
